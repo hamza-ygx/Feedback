@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Förslag B · Svart & röd — Revisionskonsulterna J Hägglund</title>
+<meta name="theme-color" content="#000000">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Archivo:wght@700;800&display=swap">
+<style>
+/* =========================================================
+   Förslag B · Svart & röd
+   Revisionskonsulterna J Hägglund AB
+
+   Logotypens två färger som hel miljö. Stjärnorna fylls i
+   byråns röda — antalet stjärnor bär betyget, färgen bär
+   avsändaren.
+
+   Skriver inte till databasen: det här är ett designförslag.
+   ========================================================= */
+
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;}
+
+body{
+  font-family:"Instrument Sans",Arial,sans-serif;
+  background:#000000;
+  background:radial-gradient(ellipse 80% 60% at 50% 45%, #161616 0%, #000000 72%);
+  color:#FFFFFF;
+  -webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+  -webkit-user-select:none;
+  touch-action:manipulation;
+  overflow:hidden;
+  text-align:center;
+}
+
+/* ---------- Logotypen ---------- */
+
+.lockup{
+  position:fixed;
+  top:0;left:0;right:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:22px 16px 0;
+}
+.lockup .block{
+  width:34px;height:34px;
+  width:min(4.6vmin,42px);height:min(4.6vmin,42px);
+  margin-right:12px;
+  flex:0 0 auto;
+}
+.lockup .block i{display:block;height:50%;}
+.lockup .block i:first-child{background:#E52B38;}
+.lockup .block i:last-child{background:#1E1E1E;outline:1px solid #333333;}
+.lockup .txt{text-align:left;line-height:1.12;color:#FFFFFF;}
+.lockup .txt b{display:block;font-size:15px;font-size:min(2.4vmin,21px);font-weight:600;letter-spacing:-.01em;}
+.lockup .txt span{display:block;font-size:13px;font-size:min(2.1vmin,18px);font-weight:700;}
+
+/* ---------- Vyer ---------- */
+
+.vy{
+  position:fixed;
+  top:88px;left:0;right:0;bottom:76px;
+  display:none;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:0 18px;
+}
+.vy.pa{display:flex;}
+
+h1{
+  margin:0 0 10px;
+  font-family:"Archivo",Arial,sans-serif;
+  font-weight:700;
+  font-size:38px; /* = clampat resultat vid plattans 1280×800 */
+  font-size:clamp(22px,4.8vmin,44px);
+  line-height:1.12;
+  letter-spacing:-.02em;
+}
+.under{
+  margin:0 0 40px;
+  font-size:12px;
+  font-weight:500;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:#B33A42;
+}
+.rad{display:flex;justify-content:center;}
+.stj{
+  background:none;border:0;padding:10px 5px;
+  border-radius:14px;
+  cursor:pointer;
+  line-height:0;
+  transition:transform .16s ease;
+}
+.stj svg{width:125px;width:min(14vw,19vh,128px);height:auto;display:block;transition:filter .16s ease;}
+.stj polygon{
+  fill:none;
+  stroke:#4A4A4A;
+  stroke-width:6;
+  stroke-linejoin:round;
+  transition:fill .12s ease,stroke .12s ease;
+}
+.stj.tand polygon{fill:#E52B38;stroke:#E52B38;}
+.stj.tand svg{filter:drop-shadow(0 0 10px rgba(229,43,56,.45));}
+.stj:active{transform:scale(.92);}
+@media (hover:hover){
+  .stj:hover{transform:translateY(-2px);}
+}
+.stj:focus-visible{outline:3px solid #E52B38;outline-offset:3px;}
+.tips{
+  margin:36px 0 0;
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:#7A7A7A;
+}
+
+.tack h2{
+  font-family:"Archivo",Arial,sans-serif;
+  font-weight:800;
+  font-size:46px;
+  margin:0 0 10px;
+  color:#E52B38;
+  letter-spacing:-.02em;
+}
+.tack p{margin:0;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:#8C8C8C;}
+
+/* ---------- Sidfot ---------- */
+
+.sidfot{position:fixed;bottom:0;left:0;right:0;padding:0 16px 16px;}
+.sidfot .anonym{margin:0;font-size:10px;font-size:min(1.5vmin,13px);letter-spacing:.08em;text-transform:uppercase;color:#5E5E5E;}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
+</style>
+</head>
+<body>
+
+<div class="lockup">
+  <span class="block" aria-hidden="true"><i></i><i></i></span>
+  <span class="txt"><b>Revisionskonsulterna</b><span>J Hägglund AB</span></span>
+</div>
+
+<div class="vy pa" data-vy="fraga">
+  <h1>Hur skulle du betygsätta<br>ditt besök?</h1>
+  <p class="under">Engagemanget gör skillnaden</p>
+  <div class="rad" id="rad" role="group" aria-label="Betygsätt ditt besök"></div>
+  <p class="tips">Välj antal stjärnor</p>
+</div>
+
+<div class="vy tack" data-vy="tack" aria-live="polite">
+  <h2>Tack.</h2>
+  <p>Vi uppskattar att du tog dig tid</p>
+</div>
+
+<div class="sidfot">
+  <p class="anonym">Svaren är anonyma</p>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var NS = "http://www.w3.org/2000/svg";
+  var TACK_MS = 2600;
+
+  /* Kort paus efter tryck innan tacket tar över — precis lång
+     nog för att man ska hinna se att stjärnan tände, inte så
+     lång att det känns som en fördröjning.                    */
+  var BEKRAFTA_MS = 140;
+
+  function el(tag, attr){
+    var e = document.createElementNS(NS, tag);
+    for (var k in attr) e.setAttribute(k, attr[k]);
+    return e;
+  }
+
+  var rad = document.getElementById("rad");
+  var stjarnor = [];
+  var vald = false;
+
+  for (var j = 0; j < 5; j++){
+    (function(j){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "stj";
+      b.setAttribute("aria-label", (j + 1) + " av 5");
+      var svg = el("svg", { viewBox:"0 0 100 100" });
+      svg.appendChild(el("polygon", {
+        points:"50,8 61,38 94,38 67,58 77,90 50,70 23,90 33,58 6,38 39,38"
+      }));
+      b.appendChild(svg);
+      b.onmouseenter = function(){ if (!vald) tand(j); };
+      b.onmouseleave = function(){ if (!vald) tand(-1); };
+      b.onclick = function(){
+        if (vald) return;
+        vald = true;
+        tand(j);
+        setTimeout(svara, BEKRAFTA_MS);
+      };
+      rad.appendChild(b);
+      stjarnor.push(b);
+    })(j);
+  }
+
+  function tand(till){
+    for (var k = 0; k < stjarnor.length; k++){
+      stjarnor[k].className = k <= till ? "stj tand" : "stj";
+    }
+  }
+
+  var vyer = document.querySelectorAll(".vy");
+  function byt(vilken){
+    for (var i = 0; i < vyer.length; i++){
+      var ar = vyer[i].getAttribute("data-vy") === vilken;
+      vyer[i].className = "vy" + (ar ? " pa" : "") +
+        (vyer[i].getAttribute("data-vy") === "tack" ? " tack" : "");
+    }
+  }
+
+  var timer = null;
+  function svara(){
+    byt("tack");
+    clearTimeout(timer);
+    timer = setTimeout(function(){
+      byt("fraga");
+      vald = false;
+      tand(-1);
+    }, TACK_MS);
+  }
+
+  document.oncontextmenu = function(e){ e.preventDefault(); };
+})();
+</script>
+</body>
+</html>

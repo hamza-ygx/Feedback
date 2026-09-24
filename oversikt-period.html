@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Feedbacköversikt — Revisionskonsulterna J Hägglund</title>
+<meta name="theme-color" content="#F4F5F6">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Archivo:wght@600;700;800&display=swap">
+<style>
+/* =========================================================
+   Feedbacköversikt — dag / vecka / månad / år
+   Revisionskonsulterna J Hägglund AB
+
+   Läser samma hamta_statistik(kod, dagar)-funktion som redan
+   finns i databasen, helt oförändrad. All gruppering per
+   vecka/månad/år görs i webbläsaren, inte i databasen — det
+   här projektet är tillfälligt och byts ut mot ett i Charins
+   namn, så schemat ska inte växa i onödan här.
+   ========================================================= */
+
+*{box-sizing:border-box;}
+
+:root{
+  --bg:#F4F5F6;
+  --paper:#FFFFFF;
+  --line:#E3E6E8;
+  --grid:#EEF1F2;
+  --ink:#1B1F22;
+  --muted:#6B7479;
+
+  --brand:#E52B38;      /* RKJH röd — logga, aktiv flik, primär siffra */
+  --brand-bg:#FBE9EA;
+  --good:#2C7A5B;        /* samma grönt som "Mycket bra" på skärmen */
+  --good-bg:#E2F0EA;
+  --mark:#37596E;        /* neutrala volymstaplar — inte en betygsfärg */
+
+  /* samma fem betygsfärger som skärmen och kioskerna */
+  --c1:#B8433A; --t1:#F8E7E5;
+  --c2:#C97633; --t2:#FAEDE1;
+  --c3:#A8871F; --t3:#F7F0DC;
+  --c4:#6E9440; --t4:#EDF3E4;
+  --c5:#2C7A5B; --t5:#E2F0EA;
+
+  --radius:10px;
+  --shadow:0 1px 2px rgba(27,31,34,.04), 0 6px 20px -14px rgba(27,31,34,.18);
+  --font:"Instrument Sans",Arial,sans-serif;
+  --display:"Archivo",Arial,sans-serif;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--font);
+  font-size:15px;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+}
+
+button{font-family:inherit;cursor:pointer;}
+button:focus-visible,input:focus-visible{outline:2px solid var(--brand);outline-offset:2px;}
+.num{font-variant-numeric:tabular-nums;}
+
+/* ---------- Inloggning ---------- */
+
+.gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;}
+.gate .card{
+  background:var(--paper);border:1px solid var(--line);border-radius:14px;
+  box-shadow:var(--shadow);padding:2.2rem 2rem;width:min(360px,100%);text-align:center;
+}
+.gate .lockup{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:1.2rem;}
+.gate .block{width:32px;height:32px;flex:0 0 auto;}
+.gate .block i{display:block;height:50%;}
+.gate .block i:first-child{background:var(--brand);}
+.gate .block i:last-child{background:#000;}
+.gate .lockup .txt{text-align:left;line-height:1.15;}
+.gate .lockup .txt b{display:block;font-family:var(--display);font-size:14px;font-weight:600;}
+.gate .lockup .txt span{display:block;font-family:var(--display);font-size:12px;font-weight:700;}
+.gate h1{margin:0 0 .25rem;font-family:var(--display);font-size:1.2rem;font-weight:700;letter-spacing:-.01em;}
+.gate .sub{margin:0 0 1.5rem;font-size:.85rem;color:var(--muted);}
+.gate input[type="password"]{
+  width:100%;font-family:inherit;font-size:1.05rem;text-align:center;letter-spacing:.08em;
+  padding:.7rem .9rem;border:1.5px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);
+}
+.gate input::placeholder{letter-spacing:0;font-size:.9rem;color:#A6AFB4;}
+.gate .fel{min-height:1.3rem;margin:.5rem 0 .2rem;font-size:.8rem;font-weight:500;color:var(--brand);}
+.gate .kom{display:flex;align-items:center;justify-content:center;gap:.45rem;font-size:.8rem;color:var(--muted);margin-bottom:1rem;}
+.gate .kom input{accent-color:var(--brand);}
+.gate .open{width:100%;font-family:var(--display);font-size:.95rem;font-weight:700;padding:.75rem;border:0;border-radius:8px;background:var(--ink);color:#fff;}
+.gate .open[disabled]{opacity:.6;cursor:wait;}
+.gate .demo{display:inline-block;margin-top:1.1rem;font-size:.8rem;color:var(--muted);background:none;border:0;text-decoration:underline;text-underline-offset:3px;}
+.gate.skaka .card{animation:skaka .4s;}
+@keyframes skaka{20%{transform:translateX(-8px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+
+/* ---------- App ---------- */
+
+.app{display:none;}
+.app.pa{display:block;}
+
+.top{
+  position:sticky;top:0;z-index:5;background:var(--paper);border-bottom:1px solid var(--line);
+  padding:.65rem clamp(1rem,3vw,2rem);display:flex;align-items:center;gap:.9rem;flex-wrap:wrap;
+}
+.top .block{width:30px;height:30px;flex:0 0 auto;}
+.top .block i{display:block;height:50%;}
+.top .block i:first-child{background:var(--brand);}
+.top .block i:last-child{background:#000;}
+.top .titlar{line-height:1.18;margin-right:auto;}
+.top .titlar b{font-family:var(--display);font-size:.92rem;font-weight:700;display:block;}
+.top .titlar span{font-size:.72rem;color:var(--muted);}
+
+.pills{display:flex;gap:.2rem;background:var(--bg);border-radius:9px;padding:.2rem;}
+.pills button{
+  border:0;border-radius:7px;background:none;color:var(--muted);
+  font-family:var(--display);font-size:.82rem;font-weight:600;padding:.42rem .8rem;
+}
+.pills button[aria-pressed="true"]{background:var(--paper);color:var(--ink);box-shadow:0 1px 2px rgba(27,31,34,.12);}
+.pills button[aria-pressed="true"]::after{content:"";display:block;height:2px;margin-top:3px;background:var(--brand);border-radius:2px;}
+
+.ikon{border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--muted);width:33px;height:33px;display:grid;place-items:center;}
+.ikon:hover{color:var(--ink);}
+.ikon svg{width:16px;height:16px;display:block;}
+.ikon.snurr svg{animation:snurr .8s linear infinite;}
+@keyframes snurr{to{transform:rotate(360deg)}}
+
+.demoband{display:none;background:#FBE9E4;color:#8A5220;font-size:.8rem;font-weight:500;text-align:center;padding:.4rem 1rem;}
+.demoband.pa{display:block;}
+
+main{max-width:1080px;margin:0 auto;padding:clamp(1rem,3vw,1.8rem);display:flex;flex-direction:column;gap:1.1rem;}
+
+/* ---------- Nyckeltal ---------- */
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.75rem;}
+.tile{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:.9rem 1rem .85rem;}
+.tile .et{font-size:.68rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);}
+.tile .rad{display:flex;align-items:baseline;gap:.5rem;margin-top:.2rem;flex-wrap:wrap;}
+.tile .v{font-family:var(--display);font-size:1.7rem;font-weight:700;letter-spacing:-.02em;}
+.tile .v.brand{color:var(--brand);}
+.tile .u{font-size:.75rem;color:var(--muted);margin-top:.1rem;}
+
+.delta{
+  display:inline-flex;align-items:center;gap:.2rem;
+  font-family:var(--display);font-size:.72rem;font-weight:700;
+  padding:.12rem .42rem;border-radius:20px;
+}
+.delta.upp{background:var(--good-bg);color:var(--good);}
+.delta.ner{background:var(--brand-bg);color:var(--brand);}
+.delta.jamn{background:var(--grid);color:var(--muted);}
+.delta.ingen{background:var(--grid);color:var(--muted);font-weight:500;}
+
+/* ---------- Kort ---------- */
+
+.kort{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:1rem 1.1rem 1.1rem;min-width:0;}
+.kort header{display:flex;align-items:baseline;gap:.6rem;margin-bottom:.55rem;}
+.kort h2{margin:0;font-family:var(--display);font-size:.9rem;font-weight:700;}
+.kort header span{font-size:.74rem;color:var(--muted);margin-left:auto;}
+.kort .vaxla{margin-left:auto;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--muted);font-size:.72rem;font-weight:600;padding:.25rem .55rem;}
+.kort .vaxla:hover{color:var(--ink);}
+.kort svg.diagram{width:100%;height:auto;display:block;}
+.kort .tomt{padding:2.4rem 0;text-align:center;font-size:.85rem;color:var(--muted);}
+
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;}
+@media (max-width:760px){.duo{grid-template-columns:1fr;}}
+
+/* ---------- Tabell ---------- */
+
+.tabellwrap{overflow-x:auto;}
+table.data{width:100%;border-collapse:collapse;font-size:.83rem;}
+table.data th{text-align:right;font-weight:600;color:var(--muted);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;padding:.45rem .6rem;border-bottom:1.5px solid var(--line);}
+table.data th:first-child,table.data td:first-child{text-align:left;}
+table.data td{text-align:right;padding:.42rem .6rem;border-bottom:1px solid var(--grid);}
+table.data tr:last-child td{border-bottom:0;}
+
+/* ---------- Verktygstips ---------- */
+
+#tips{
+  position:fixed;z-index:20;pointer-events:none;background:var(--ink);color:#fff;border-radius:7px;
+  padding:.45rem .65rem;font-size:.76rem;line-height:1.45;box-shadow:0 6px 18px -6px rgba(27,31,34,.4);
+  opacity:0;transition:opacity .1s ease;max-width:220px;
+}
+#tips.pa{opacity:1;}
+#tips b{font-weight:700;}
+#tips .rad2{display:flex;gap:.8rem;justify-content:space-between;}
+#tips .rad2 span:first-child{opacity:.75;}
+
+footer.sid{text-align:center;font-size:.75rem;color:var(--muted);padding:.4rem 0 1.5rem;line-height:1.6;}
+footer.sid .tag{font-style:italic;}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+</style>
+</head>
+<body>
+
+<!-- ===================== Inloggning ===================== -->
+<div class="gate" id="gate">
+  <form class="card" id="gateForm">
+    <div class="lockup" aria-hidden="true">
+      <span class="block"><i></i><i></i></span>
+      <span class="txt"><b>Revisionskonsulterna</b><span>J Hägglund AB</span></span>
+    </div>
+    <h1>Feedbacköversikt</h1>
+    <p class="sub">Dag, vecka, månad och år</p>
+    <input type="password" id="kod" placeholder="Åtkomstkod" autocomplete="current-password" aria-label="Åtkomstkod">
+    <p class="fel" id="gateFel" role="alert"></p>
+    <label class="kom"><input type="checkbox" id="komIhag"> Kom ihåg på den här datorn</label>
+    <button type="submit" class="open" id="gateKnapp">Öppna översikten</button>
+    <br>
+    <button type="button" class="demo" id="gateDemo">Visa med exempeldata</button>
+  </form>
+</div>
+
+<!-- ===================== Översikten ===================== -->
+<div class="app" id="app">
+  <div class="top">
+    <span class="block" aria-hidden="true"><i></i><i></i></span>
+    <div class="titlar"><b>Feedbacköversikt</b><span id="underrad">—</span></div>
+    <div class="pills" role="group" aria-label="Period">
+      <button data-p="dag" aria-pressed="false">Idag</button>
+      <button data-p="vecka" aria-pressed="false">Vecka</button>
+      <button data-p="manad" aria-pressed="true">Månad</button>
+      <button data-p="ar" aria-pressed="false">År</button>
+    </div>
+    <button class="ikon" id="uppdatera" title="Uppdatera" aria-label="Uppdatera">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+        <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"/><path d="M13.7 1.8v2.7h-2.7"/>
+      </svg>
+    </button>
+    <button class="ikon" id="las" title="Lås översikten" aria-label="Lås översikten">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+        <rect x="3" y="7" width="10" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="demoband" id="demoband">Exempeldata — inte kopplad till databasen</div>
+
+  <main>
+    <section class="tiles" id="tiles" aria-label="Nyckeltal"></section>
+
+    <section class="kort">
+      <header><h2 id="huvudTitel">Svar per dag</h2><button class="vaxla" id="vaxlaTabell">Tabell</button></header>
+      <div id="kHuvud"></div>
+    </section>
+
+    <div class="duo">
+      <section class="kort">
+        <header><h2 id="snittTitel">Snittbetyg per dag</h2><span>skala 1–5</span></header>
+        <div id="kSnitt"></div>
+      </section>
+      <section class="kort">
+        <header><h2>Fördelning av betyg <span style="font-weight:500;color:var(--muted);">— hela året</span></h2><span id="fordelningSub"></span></header>
+        <div id="kFordelning"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="sid" id="fot"></footer>
+</div>
+
+<div id="tips" role="status"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* =======================================================
+   INSTÄLLNINGAR — samma projekt som skärmen och kioskerna.
+   Byts till Charins konto längre fram: bara url + nyckel.
+   ======================================================= */
+
+var DB = {
+  url:    "https://zersylbcdxfqgtmzvlaf.supabase.co",
+  nyckel: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InplcnN5bGJjZHhmcWd0bXp2bGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5OTYwNjUsImV4cCI6MjEwMjU3MjA2NX0.bURzmunUDxaHoq750S8BTb_Nz1_9Lxzg3Rtlwnd5KZ8"
+};
+
+/* ===================================================== */
+
+var KODNYCKEL = "rkjh.oversikt2.kod";
+var MANADSNAMN = ["jan","feb","mar","apr","maj","jun","jul","aug","sep","okt","nov","dec"];
+var VECKODAGSNAMN = ["mån","tis","ons","tors","fre","lör","sön"];
+
+var state = { kod:null, demo:false, period:"manad", perDagKarta:{}, tabell:false };
+
+var $ = function(id){ return document.getElementById(id); };
+var css = function(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); };
+
+var fmt  = new Intl.NumberFormat("sv-SE");
+var fmt1 = new Intl.NumberFormat("sv-SE",{minimumFractionDigits:1,maximumFractionDigits:1});
+var dfmt = new Intl.DateTimeFormat("sv-SE",{day:"numeric",month:"short"});
+var tfmt = new Intl.DateTimeFormat("sv-SE",{hour:"2-digit",minute:"2-digit"});
+
+function isoDag(d){ return d.toISOString().slice(0,10); }
+function idagIso(){ return isoDag(new Date()); }
+function laggTillDagar(iso, n){
+  var d = new Date(iso+"T12:00:00");
+  d.setDate(d.getDate()+n);
+  return isoDag(d);
+}
+
+/* -------------------------------------------------------
+   Hämta statistik — samma funktion, oförändrad
+   ------------------------------------------------------- */
+
+function hamta(kod, dagar){
+  return fetch(DB.url + "/rest/v1/rpc/hamta_statistik", {
+    method:"POST",
+    headers:{ "apikey":DB.nyckel, "Authorization":"Bearer "+DB.nyckel, "Content-Type":"application/json" },
+    body: JSON.stringify({ kod:kod, dagar:dagar })
+  }).then(function(r){
+    if (r.status === 403) throw { typ:"kod" };
+    if (!r.ok) throw { typ:"natet" };
+    return r.json();
+  });
+}
+
+/* -------------------------------------------------------
+   Exempeldata — 400 dagar bakåt så år-vyn har nåt att visa
+   ------------------------------------------------------- */
+
+function exempeldata(dagar){
+  var perDag = [], fordTot = {1:0,2:0,3:0,4:0,5:0}, timmar = {};
+  var nu = new Date();
+
+  for (var i = dagar-1; i>=0; i--){
+    var iso = laggTillDagar(idagIso(), -i);
+    var d = new Date(iso+"T12:00:00");
+    var vd = (d.getDay()+6)%7;
+    var sasong = 1 + 0.15*Math.sin((d.getMonth()/12)*2*Math.PI);
+    var antal = vd===6 ? 0 : vd===5 ? Math.floor(Math.random()*4)
+                          : Math.round((9+Math.floor(Math.random()*13))*sasong);
+    var da = {dag:iso, antal:0, snitt:null, nojda:0, missnojda:0}, s=0;
+
+    for (var k=0;k<antal;k++){
+      var r = Math.random();
+      var b = r<0.05?1 : r<0.11?2 : r<0.24?3 : r<0.56?4 : 5;
+      fordTot[b]++; s+=b;
+      if (b>=4) da.nojda++; if (b<=2) da.missnojda++;
+      if (i===0){
+        var tm = 8 + Math.floor(Math.pow(Math.random(),1.4)*9);
+        timmar[tm] = timmar[tm] || {antal:0,sum:0};
+        timmar[tm].antal++; timmar[tm].sum += b;
+      }
+    }
+    da.antal = antal;
+    if (antal) da.snitt = Math.round(s/antal*100)/100;
+    perDag.push(da);
+  }
+
+  return {
+    genererad: new Date().toISOString(),
+    dagar: dagar,
+    per_dag: perDag,
+    fordelning: fordTot,
+    per_timme: Object.keys(timmar).sort(function(a,b){return a-b}).map(function(t){
+      return { timme:+t, antal:timmar[t].antal, snitt:Math.round(timmar[t].sum/timmar[t].antal*100)/100 };
+    })
+  };
+}
+
+function exempelIdag(){
+  var timmar = {}, tot=0, sum=0;
+  var maxTimme = Math.min(23, new Date().getHours());
+  for (var tm=8; tm<=maxTimme; tm++){
+    var antal = Math.floor(Math.random()*6);
+    if (!antal) continue;
+    var s=0;
+    for (var k=0;k<antal;k++){ var b=1+Math.floor(Math.random()*5); s+=b; }
+    timmar[tm] = {antal:antal, snitt:Math.round(s/antal*100)/100};
+    tot += antal; sum += s;
+  }
+  return {
+    totalt:{ antal:tot, snitt: tot? Math.round(sum/tot*100)/100 : null, idag:tot },
+    per_timme: Object.keys(timmar).sort(function(a,b){return a-b}).map(function(t){
+      return {timme:+t, antal:timmar[t].antal, snitt:timmar[t].snitt};
+    })
+  };
+}
+
+/* -------------------------------------------------------
+   Inloggning
+   ------------------------------------------------------- */
+
+var gate=$("gate"), app=$("app");
+
+$("gateForm").addEventListener("submit", function(e){
+  e.preventDefault();
+  var kod = $("kod").value.trim();
+  if (!kod) return;
+  $("gateKnapp").disabled = true;
+  $("gateFel").textContent = "";
+
+  hamta(kod, 366).then(function(data){
+    state.kod = kod; state.demo = false;
+    if ($("komIhag").checked){ try{ localStorage.setItem(KODNYCKEL, kod); }catch(e){} }
+    oppna(data);
+  }).catch(function(fel){
+    $("gateKnapp").disabled = false;
+    if (fel && fel.typ === "kod") visaFel("Fel åtkomstkod — försök igen.");
+    else visaFel("Går inte att nå databasen härifrån.");
+  });
+});
+
+function visaFel(txt){
+  $("gateFel").textContent = txt;
+  gate.classList.remove("skaka"); void gate.offsetWidth;
+  gate.classList.add("skaka");
+}
+
+$("gateDemo").addEventListener("click", function(){
+  state.demo = true;
+  oppna(exempeldata(400));
+});
+
+function oppna(arsData){
+  state.arsData = arsData;
+  byggPerDagKarta(arsData.per_dag);
+  gate.style.display = "none";
+  app.classList.add("pa");
+  $("demoband").classList.toggle("pa", state.demo);
+  ladda();
+}
+
+function lasIgen(){
+  try{ localStorage.removeItem(KODNYCKEL); }catch(e){}
+  state.kod=null; state.demo=false; state.arsData=null;
+  app.classList.remove("pa"); gate.style.display="flex";
+  $("kod").value=""; $("gateKnapp").disabled=false;
+}
+$("las").addEventListener("click", lasIgen);
+
+(function(){
+  var sparad=null;
+  try{ sparad = localStorage.getItem(KODNYCKEL); }catch(e){}
+  if (!sparad) return;
+  hamta(sparad, 366).then(function(data){ state.kod=sparad; oppna(data); })
+    .catch(function(){ try{ localStorage.removeItem(KODNYCKEL); }catch(e){} });
+})();
+
+/* -------------------------------------------------------
+   Karta: iso-datum → rad, för snabb uppslagning
+   ------------------------------------------------------- */
+
+function byggPerDagKarta(perDag){
+  var karta = {}, tidigast = null;
+  perDag.forEach(function(r){
+    karta[r.dag] = r;
+    if (r.antal>0 && (tidigast===null || r.dag < tidigast)) tidigast = r.dag;
+  });
+  state.perDagKarta = karta;
+  state.tidigasteDatum = tidigast;   // äldsta dag med minst ett svar
+}
+
+function radFor(iso){
+  return state.perDagKarta[iso] || { dag:iso, antal:0, snitt:null, nojda:0, missnojda:0 };
+}
+
+/* Slår ihop N dagar till en aggregerad period. Snittet räknas
+   viktat per dagens antal svar — matematiskt korrekt eftersom
+   varje dags snitt representerar en riktig summa betyg.        */
+
+function summeraPeriod(fromIso, dagarAntal){
+  var antal=0, sumBetyg=0, nojda=0, missnojda=0;
+  for (var i=0;i<dagarAntal;i++){
+    var r = radFor(laggTillDagar(fromIso, i));
+    antal += r.antal; nojda += r.nojda; missnojda += r.missnojda;
+    if (r.snitt!=null) sumBetyg += r.snitt * r.antal;
+  }
+  return { antal:antal, snitt: antal? Math.round(sumBetyg/antal*100)/100 : null, nojda:nojda, missnojda:missnojda };
+}
+
+/* -------------------------------------------------------
+   Period, uppdatering
+   ------------------------------------------------------- */
+
+Array.prototype.forEach.call(document.querySelectorAll(".pills button"), function(b){
+  b.addEventListener("click", function(){
+    Array.prototype.forEach.call(document.querySelectorAll(".pills button"), function(x){
+      x.setAttribute("aria-pressed", x===b ? "true" : "false");
+    });
+    state.period = b.dataset.p;
+    ladda();
+  });
+});
+
+$("uppdatera").addEventListener("click", function(){ ladda(true); });
+setInterval(function(){ if (state.kod || state.demo) ladda(false, true); }, 5*60*1000);
+
+function ladda(tvinga, tyst){
+  if (state.demo){
+    if (state.period === "dag") { state.dagData = exempelIdag(); rita(); return; }
+    if (!tvinga && state.arsData){ rita(); return; }
+    state.arsData = exempeldata(400);
+    byggPerDagKarta(state.arsData.per_dag);
+    rita();
+    return;
+  }
+  if (!state.kod) return;
+
+  var knapp = $("uppdatera");
+  if (!tyst) knapp.classList.add("snurr");
+
+  if (state.period === "dag"){
+    hamta(state.kod, 1).then(function(data){ state.dagData = data; rita(); })
+      .catch(function(){ if(!tyst) $("fot").textContent = "Kunde inte uppdatera."; })
+      .then(function(){ knapp.classList.remove("snurr"); });
+    return;
+  }
+
+  if (!tvinga && state.arsData){ rita(); knapp.classList.remove("snurr"); return; }
+
+  hamta(state.kod, 366).then(function(data){
+    state.arsData = data; byggPerDagKarta(data.per_dag); rita();
+  }).catch(function(){
+    if (!tyst) $("fot").textContent = "Kunde inte uppdatera — visar senaste hämtningen.";
+  }).then(function(){ knapp.classList.remove("snurr"); });
+}
+
+/* -------------------------------------------------------
+   Bygg periodens dataserie: {serie, headline, jamforelse, upplosning}
+   ------------------------------------------------------- */
+
+function byggPeriod(){
+  var idag = idagIso();
+  var p = state.period;
+
+  if (p === "dag"){
+    var d = state.dagData || {totalt:{antal:0,snitt:null,idag:0}, per_timme:[]};
+    var igar = radFor(laggTillDagar(idag,-1));
+    return {
+      upplosning:"timme",
+      serie: d.per_timme || [],
+      nuvarande: { antal:d.totalt.antal||0, snitt:d.totalt.snitt, nojda:null, missnojda:null },
+      foregaende: { antal:igar.antal, snitt:igar.snitt, nojda:igar.nojda, missnojda:igar.missnojda },
+      etikett:"Idag", etikettFor:"Igår"
+    };
+  }
+
+  if (p === "vecka" || p === "manad"){
+    var n = p === "vecka" ? 7 : 30;
+    var serie = [];
+    for (var i=n-1;i>=0;i--) serie.push(radFor(laggTillDagar(idag,-i)));
+
+    var foreStart = laggTillDagar(idag,-(2*n-1));
+    var fore;
+    // Om jämförelseperioden börjar innan den äldsta dagen vi har
+    // något svar från alls, täcker den bara delvis in verklig data —
+    // en summa av det skulle jämföra en hel period mot en godtycklig
+    // bråkdel av en. Hellre ingen jämförelse än en missvisande.
+    if (state.tidigasteDatum && foreStart < state.tidigasteDatum){
+      fore = { antal:0, snitt:null, nojda:0, missnojda:0 };
+    } else {
+      fore = summeraPeriod(foreStart, n);
+    }
+
+    return {
+      upplosning:"dag",
+      serie: serie,
+      nuvarande: summeraPeriod(laggTillDagar(idag,-(n-1)), n),
+      foregaende: fore,
+      etikett: p==="vecka" ? "Denna vecka" : "Denna månad",
+      etikettFor: p==="vecka" ? "Förra veckan" : "Förra månaden"
+    };
+  }
+
+  // år: bucketa 365 dagar till kalendermånader
+  var manader = {}, ordning = [];
+  for (var i=364;i>=0;i--){
+    var iso = laggTillDagar(idag,-i);
+    var nyckel = iso.slice(0,7);
+    if (!manader[nyckel]){ manader[nyckel]={nyckel:nyckel,antal:0,sumBetyg:0,nojda:0,missnojda:0}; ordning.push(nyckel); }
+    var r = radFor(iso);
+    var m = manader[nyckel];
+    m.antal += r.antal; m.nojda += r.nojda; m.missnojda += r.missnojda;
+    if (r.snitt!=null) m.sumBetyg += r.snitt*r.antal;
+  }
+  var serieAr = ordning.map(function(k){
+    var m = manader[k];
+    return { manad:k, antal:m.antal, snitt: m.antal? Math.round(m.sumBetyg/m.antal*100)/100 : null,
+             nojda:m.nojda, missnojda:m.missnojda };
+  });
+
+  // Föregående år skulle kräva data från 366–730 dagar bakåt, men vi
+  // hämtar bara 366 dagar totalt. Att ändå summera det som RÅKAR
+  // finnas i svansen av den hämtade perioden ger inte "föregående
+  // år" — det ger en godtycklig delmängd som kan se ut som vad som
+  // helst. Jämförelsen är strukturellt omöjlig med dagens hämtning,
+  // så vi låtsas inte kunna den: alltid "ingen jämförelse" för år.
+  return {
+    upplosning:"manad",
+    serie: serieAr,
+    nuvarande: summeraPeriod(laggTillDagar(idag,-364), 365),
+    foregaende: { antal:0, snitt:null, nojda:0, missnojda:0 },
+    etikett:"Detta år", etikettFor:"Föregående år"
+  };
+}
+
+/* -------------------------------------------------------
+   Rendering
+   ------------------------------------------------------- */
+
+function rita(){
+  var P = byggPeriod();
+
+  $("underrad").textContent = P.etikett;
+
+  var titlar = {
+    dag:{huvud:"Svar per timme idag", snitt:"Snittbetyg per timme idag"},
+    vecka:{huvud:"Svar per dag", snitt:"Snittbetyg per dag"},
+    manad:{huvud:"Svar per dag", snitt:"Snittbetyg per dag"},
+    ar:{huvud:"Svar per månad", snitt:"Snittbetyg per månad"}
+  }[state.period];
+  $("huvudTitel").textContent = titlar.huvud;
+  $("snittTitel").textContent = titlar.snitt;
+
+  ritaTiles(P);
+  ritaHuvud(P);
+  ritaSnitt(P);
+  ritaFordelning(P);
+
+  $("fot").innerHTML = (state.demo ? "Exempeldata &middot; " : "") +
+    "Uppdaterad " + tfmt.format(new Date()) +
+    '<br><span class="tag">”Engagemanget gör skillnaden”</span>';
+}
+
+/* jamforBas styr vad "fore" räknas mot för att avgöra om det finns
+   någon jämförelsedata alls — vanligtvis periodens antal svar. Passa
+   in explicit när nu/fore INTE själva är antal (t.ex. andel nöjda,
+   där bristande data känns igen på perioden den räknades ur).        */
+
+function deltaHtml(nu, fore, omvant, poang, jamforBas){
+  var bas = jamforBas!==undefined ? jamforBas : fore;
+  if (!bas){
+    return '<span class="delta ingen">Ingen jämförelse än</span>';
+  }
+  if (nu==null || fore==null) return "";
+  var diff = nu - fore;
+  if (Math.abs(diff) < 0.0001){
+    return '<span class="delta jamn">Oförändrad</span>';
+  }
+  var upp = omvant ? diff < 0 : diff > 0;
+  var pil = diff > 0 ? "↑" : "↓";
+  var text;
+  if (poang){
+    // nu/fore är redan procenttal (t.ex. andel nöjda) — visa
+    // skillnaden i procentenheter direkt, inte procent-av-procent.
+    text = pil+" "+Math.round(Math.abs(diff))+" %-enh.";
+  } else {
+    var pct = fore ? Math.round(Math.abs(diff)/Math.abs(fore)*100) : null;
+    text = pct!=null && isFinite(pct) ? pil+" "+pct+" %" : pil;
+  }
+  return '<span class="delta '+(upp?"upp":"ner")+'">'+text+'</span>';
+}
+
+function tile(et, v, u, deltaH, brand){
+  return '<div class="tile"><div class="et">'+et+'</div>'+
+    '<div class="rad"><span class="v'+(brand?" brand":"")+' num">'+v+'</span>'+(deltaH||'')+'</div>'+
+    '<div class="u">'+u+'</div></div>';
+}
+
+function ritaTiles(P){
+  var nu = P.nuvarande, fore = P.foregaende;
+  var andelNu = nu.antal ? Math.round(100*(nu.nojda||0)/nu.antal) : null;
+  var andelFore = fore.antal ? Math.round(100*(fore.nojda||0)/fore.antal) : null;
+
+  var html = "";
+  html += tile("SVAR", fmt.format(nu.antal||0), P.etikett.toLowerCase(),
+    deltaHtml(nu.antal, fore.antal, false), true);
+  html += tile("SNITTBETYG", nu.snitt!=null?fmt1.format(nu.snitt):"–", "av 5",
+    deltaHtml(nu.snitt, fore.snitt, false));
+
+  if (state.period !== "dag"){
+    html += tile("ANDEL NÖJDA", andelNu!=null?andelNu+" %":"–", "betyg 4–5",
+      deltaHtml(andelNu, andelFore, false, true, fore.antal));
+    html += tile("MISSNÖJDA", fmt.format(nu.missnojda||0), "betyg 1–2",
+      deltaHtml(nu.missnojda, fore.missnojda, true));
+  }
+
+  $("tiles").innerHTML = html;
+}
+
+/* --- SVG-hjälp --- */
+
+var NS = "http://www.w3.org/2000/svg";
+function el(tag, attr){ var e=document.createElementNS(NS,tag); for(var k in attr) e.setAttribute(k,attr[k]); return e; }
+function stapel(x,y,b,h,r,farg){
+  if (h<=0.5) return null;
+  r = Math.min(r,b/2,h);
+  var p="M"+x+","+(y+h)+" v"+(-(h-r))+" q0,"+(-r)+" "+r+","+(-r)+" h"+(b-2*r)+" q"+r+",0 "+r+","+r+" v"+(h-r)+" z";
+  return el("path",{d:p,fill:farg});
+}
+var tips=$("tips");
+function visaTips(html,x,y){
+  tips.innerHTML=html; tips.classList.add("pa");
+  var b=tips.getBoundingClientRect();
+  var vx=Math.min(Math.max(x-b.width/2,8),innerWidth-b.width-8);
+  var vy=y-b.height-12; if(vy<8) vy=y+16;
+  tips.style.left=vx+"px"; tips.style.top=vy+"px";
+}
+function gomTips(){ tips.classList.remove("pa"); }
+document.addEventListener("scroll", gomTips, true);
+
+function etikettForPunkt(P, i){
+  if (P.upplosning==="timme"){ var t=P.serie[i].timme; return "kl "+String(t).padStart(2,"0")+"–"+String(t+1).padStart(2,"0"); }
+  if (P.upplosning==="manad"){ var m=P.serie[i].manad.split("-"); return MANADSNAMN[+m[1]-1]+" "+m[0]; }
+  return dfmt.format(new Date(P.serie[i].dag+"T12:00:00"));
+}
+
+/* --- Huvuddiagrammet: svar per [timme|dag|månad] --- */
+
+function ritaHuvud(P){
+  var mount=$("kHuvud");
+  if (state.tabell){ ritaTabell(mount,P); return; }
+
+  var serie=P.serie;
+  if (!serie.length){ mount.innerHTML='<p class="tomt">Inga svar i perioden.</p>'; return; }
+
+  var W=920,H=210,M={t:12,r:6,b:24,l:32};
+  var iw=W-M.l-M.r, ih=H-M.t-M.b;
+  var max=Math.max(4, Math.max.apply(null, serie.map(function(r){return r.antal;})));
+  var svg=el("svg",{viewBox:"0 0 "+W+" "+H,"class":"diagram",role:"img",
+    "aria-label":"Stapeldiagram över antal svar"});
+
+  [0,0.5,1].forEach(function(f){
+    var y=M.t+ih-f*ih;
+    svg.appendChild(el("line",{x1:M.l,y1:y,x2:W-M.r,y2:y,stroke:css("--grid"),"stroke-width":1}));
+    var lbl=el("text",{x:M.l-6,y:y+3,"text-anchor":"end","font-size":10,fill:css("--muted")});
+    lbl.textContent=Math.round(f*max); svg.appendChild(lbl);
+  });
+
+  var steg=iw/serie.length, b=Math.max(2, steg-Math.max(2, steg*(serie.length>60?0.15:0.25)));
+  serie.forEach(function(r,i){
+    var h=r.antal/max*ih, x=M.l+i*steg+(steg-b)/2, y=M.t+ih-h;
+    var s=stapel(x,y,b,h,3,css("--mark"));
+    if (s) svg.appendChild(s);
+
+    var hit=el("rect",{x:M.l+i*steg,y:M.t,width:steg,height:ih,fill:"transparent"});
+    hit.addEventListener("mousemove",function(e){
+      var extra = r.missnojda ? '<div class="rad2"><span>Missnöjda</span><span>'+r.missnojda+"</span></div>" : "";
+      visaTips("<b>"+etikettForPunkt(P,i)+"</b>"+
+        '<div class="rad2"><span>Svar</span><span>'+r.antal+"</span></div>"+
+        (r.snitt!=null?'<div class="rad2"><span>Snitt</span><span>'+fmt1.format(r.snitt)+"</span></div>":"")+
+        extra, e.clientX, e.clientY);
+    });
+    hit.addEventListener("mouseleave",gomTips);
+    svg.appendChild(hit);
+
+    var visaEtikett = serie.length<=14 || i===0 || i===serie.length-1 ||
+      (P.upplosning==="dag" && serie.length<=31 && i%7===0 && serie.length-i>3 && i>2) ||
+      (P.upplosning==="manad");
+    if (visaEtikett){
+      var d=el("text",{x:M.l+i*steg+steg/2,y:H-6,"text-anchor":"middle","font-size":9.5,fill:css("--muted")});
+      d.textContent=etikettForPunkt(P,i); svg.appendChild(d);
+    }
+  });
+
+  mount.innerHTML=""; mount.appendChild(svg);
+}
+
+$("vaxlaTabell").addEventListener("click", function(){
+  state.tabell=!state.tabell;
+  this.textContent = state.tabell ? "Diagram" : "Tabell";
+  rita();
+});
+
+function ritaTabell(mount, P){
+  var rader = P.serie.slice().reverse().filter(function(r){return r.antal>0;});
+  if (!rader.length){ mount.innerHTML='<p class="tomt">Inga svar i perioden.</p>'; return; }
+  var kolRubrik = P.upplosning==="timme" ? "Timme" : P.upplosning==="manad" ? "Månad" : "Dag";
+  var html='<div class="tabellwrap"><table class="data"><thead><tr>'+
+    "<th>"+kolRubrik+"</th><th>Svar</th><th>Snitt</th></tr></thead><tbody>";
+  rader.forEach(function(r,i){
+    var idxOrig = P.serie.length-1-i;
+    html+="<tr><td>"+etikettForPunkt(P,idxOrig)+'</td><td class="num">'+r.antal+
+      '</td><td class="num">'+(r.snitt!=null?fmt1.format(r.snitt):"–")+"</td></tr>";
+  });
+  mount.innerHTML=html+"</tbody></table></div>";
+}
+
+/* --- Snittbetyg-linjen --- */
+
+function ritaSnitt(P){
+  var mount=$("kSnitt");
+  var serie=P.serie;
+  if (!serie.length){ mount.innerHTML='<p class="tomt">Inga svar i perioden.</p>'; return; }
+
+  var W=920,H=210,M={t:12,r:6,b:24,l:26};
+  var iw=W-M.l-M.r, ih=H-M.t-M.b;
+  var y=function(v){ return M.t+ih-(v-1)/4*ih; };
+  var steg=iw/serie.length, x=function(i){ return M.l+i*steg+steg/2; };
+
+  var svg=el("svg",{viewBox:"0 0 "+W+" "+H,"class":"diagram",role:"img",
+    "aria-label":"Linjediagram över snittbetyg, skala 1 till 5"});
+
+  [1,2,3,4,5].forEach(function(v){
+    svg.appendChild(el("line",{x1:M.l,y1:y(v),x2:W-M.r,y2:y(v),stroke:css("--grid"),"stroke-width":1}));
+    var lbl=el("text",{x:M.l-6,y:y(v)+3,"text-anchor":"end","font-size":10,fill:css("--muted")});
+    lbl.textContent=v; svg.appendChild(lbl);
+  });
+
+  var seg=[], akt=[];
+  serie.forEach(function(r,i){
+    if (r.snitt==null){ if (akt.length) seg.push(akt); akt=[]; }
+    else akt.push({i:i,v:r.snitt});
+  });
+  if (akt.length) seg.push(akt);
+
+  seg.forEach(function(s){
+    if (s.length===1){ svg.appendChild(el("circle",{cx:x(s[0].i),cy:y(s[0].v),r:2.5,fill:css("--ink")})); return; }
+    var d=s.map(function(p,j){ return (j?"L":"M")+x(p.i).toFixed(1)+","+y(p.v).toFixed(1); }).join(" ");
+    svg.appendChild(el("path",{d:d,fill:"none",stroke:css("--ink"),"stroke-width":2,"stroke-linecap":"round","stroke-linejoin":"round"}));
+  });
+
+  var sista=null;
+  for (var i=serie.length-1;i>=0;i--){ if (serie[i].snitt!=null){ sista=i; break; } }
+  if (sista!=null) svg.appendChild(el("circle",{cx:x(sista),cy:y(serie[sista].snitt),r:3.5,fill:css("--ink"),stroke:css("--paper"),"stroke-width":2}));
+
+  var mark=el("line",{y1:M.t,y2:M.t+ih,stroke:"#D7DFE5","stroke-width":1,opacity:0});
+  svg.appendChild(mark);
+
+  var hit=el("rect",{x:M.l,y:M.t,width:iw,height:ih,fill:"transparent"});
+  hit.addEventListener("mousemove",function(e){
+    var pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY;
+    var p=pt.matrixTransform(svg.getScreenCTM().inverse());
+    var i=Math.min(serie.length-1,Math.max(0,Math.floor((p.x-M.l)/steg)));
+    var r=serie[i];
+    mark.setAttribute("x1",x(i)); mark.setAttribute("x2",x(i)); mark.setAttribute("opacity",1);
+    visaTips("<b>"+etikettForPunkt(P,i)+"</b>"+
+      (r.snitt!=null
+        ? '<div class="rad2"><span>Snitt</span><span>'+fmt1.format(r.snitt)+"</span></div>"+
+          '<div class="rad2"><span>Svar</span><span>'+r.antal+"</span></div>"
+        : "<div>Inga svar</div>"), e.clientX, e.clientY);
+  });
+  hit.addEventListener("mouseleave",function(){ mark.setAttribute("opacity",0); gomTips(); });
+  svg.appendChild(hit);
+
+  [0,serie.length-1].forEach(function(i){
+    var d=el("text",{x:x(i),y:H-6,"text-anchor":"middle","font-size":9.5,fill:css("--muted")});
+    d.textContent=etikettForPunkt(P,i); svg.appendChild(d);
+  });
+
+  mount.innerHTML=""; mount.appendChild(svg);
+}
+
+/* --- Fördelning --- */
+
+function ritaFordelning(P){
+  var mount=$("kFordelning");
+  var ford = {1:0,2:0,3:0,4:0,5:0};
+
+  // Databasfunktionen ger fördelningen som en enda summa över hela det
+  // hämtade fönstret (upp till 366 dagar) — inte uppdelad per dag som
+  // antal/snitt är. Den kan därför inte bantas till "denna vecka" eller
+  // "idag"; den visas oförändrad, alltid för hela året, på alla flikar.
+  var kalla = state.arsData && state.arsData.fordelning ? state.arsData.fordelning : {};
+  for (var v=1; v<=5; v++) ford[v] = kalla[v] || kalla[String(v)] || 0;
+  var totFord = ford[1]+ford[2]+ford[3]+ford[4]+ford[5];
+
+  $("fordelningSub").textContent = totFord ? fmt.format(totFord)+" svar (helår)" : "";
+  if (!totFord){ mount.innerHTML='<p class="tomt">Inga svar än.</p>'; return; }
+
+  var NAMN=["Mycket dåligt","Dåligt","Okej","Bra","Mycket bra"];
+  var FARG=["--c1","--c2","--c3","--c4","--c5"];
+  var TON=["--t1","--t2","--t3","--t4","--t5"];
+  var MUN=["M30,72 Q50,52 70,72","M30,69 Q50,58 70,69","M31,64 L69,64","M30,60 Q50,71 70,60","M30,57 Q50,78 70,57"];
+  function fcol(v){ return css(v); }
+
+  var W=460,H=200,M={t:14,r:10,b:44,l:10};
+  var iw=W-M.l-M.r, ih=H-M.t-M.b;
+  var max=1; for (var b=1;b<=5;b++) max=Math.max(max, ford[b]||0);
+
+  var svg=el("svg",{viewBox:"0 0 "+W+" "+H,"class":"diagram",role:"img","aria-label":"Fördelning av betyg 1 till 5"});
+  var steg=iw/5, br=Math.min(56, steg*0.62);
+
+  for (var v=1; v<=5; v++){
+    (function(v){
+      var n=ford[v]||0, h=n/max*ih;
+      var cx=M.l+(v-0.5)*steg, x0=cx-br/2, y0=M.t+ih-h;
+      var s=stapel(x0,y0,br,h,4,css("--mark")); if (s) svg.appendChild(s);
+
+      var lbl=el("text",{x:cx,y:(h>0?y0-5:M.t+ih-5),"text-anchor":"middle","font-size":11,"font-weight":600,fill:css("--ink")});
+      lbl.textContent=fmt.format(n); svg.appendChild(lbl);
+
+      var g=el("g",{transform:"translate("+(cx-11)+","+(M.t+ih+8)+") scale(0.22)"});
+      g.appendChild(el("circle",{cx:50,cy:50,r:45,fill:fcol(TON[v-1]),stroke:fcol(FARG[v-1]),"stroke-width":6}));
+      g.appendChild(el("circle",{cx:35,cy:40,r:6,fill:fcol(FARG[v-1])}));
+      g.appendChild(el("circle",{cx:65,cy:40,r:6,fill:fcol(FARG[v-1])}));
+      g.appendChild(el("path",{d:MUN[v-1],fill:"none",stroke:fcol(FARG[v-1]),"stroke-width":7,"stroke-linecap":"round"}));
+      svg.appendChild(g);
+
+      var hit=el("rect",{x:M.l+(v-1)*steg,y:M.t,width:steg,height:ih+M.b,fill:"transparent"});
+      hit.addEventListener("mousemove",function(e){
+        var pc = totFord ? Math.round(100*n/totFord) : 0;
+        visaTips("<b>"+NAMN[v-1]+"</b>"+
+          '<div class="rad2"><span>Antal</span><span>'+fmt.format(n)+"</span></div>"+
+          '<div class="rad2"><span>Andel</span><span>'+pc+" %</span></div>", e.clientX, e.clientY);
+      });
+      hit.addEventListener("mouseleave",gomTips);
+      svg.appendChild(hit);
+    })(v);
+  }
+
+  mount.innerHTML=""; mount.appendChild(svg);
+}
+
+})();
+</script>
+</body>
+</html>

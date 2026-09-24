@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Tre förslag — Revisionskonsulterna J Hägglund</title>
+<meta name="theme-color" content="#FFFFFF">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Archivo:wght@500;600;700;800&display=swap">
+<style>
+/* =========================================================
+   Tre förslag på feedbackskärm
+   Revisionskonsulterna J Hägglund AB · ”Engagemanget gör skillnaden”
+
+   Byggt i byråns egna färger, tagna ur logotyp och webbplats:
+     röd   #E52B38   (logotypens block)
+     svart #000000   (logotypens text och block)
+     grå   #505050   (webbplatsens brödtext)
+
+   Betygsskalan behåller sina egna färger där den har några —
+   rött betyder ”dåligt” på en skala och kan inte samtidigt
+   vara byråns färg. Röd är ramen, inte svaret.
+
+   Ingen av skärmarna skriver till databasen. Provtryckningar
+   ska inte blandas in i riktig statistik.
+   ========================================================= */
+
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;}
+
+body{
+  font-family:"Instrument Sans",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+  -webkit-user-select:none;
+  touch-action:manipulation;
+  overflow:hidden;
+  background:#0B0D0C;
+}
+
+/* ---------- Väljaren (bara för mötet, inte del av designen) ---------- */
+
+.valjare{
+  position:fixed;
+  top:0;left:0;right:0;
+  height:52px;
+  z-index:10;
+  background:#15181A;
+  display:flex;
+  align-items:center;
+  padding:0 10px;
+}
+.valjare .namn{
+  color:#7F8B92;
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  padding:0 10px 0 6px;
+  white-space:nowrap;
+}
+.flikar{display:flex;flex:1;}
+.flikar button{
+  flex:1;
+  font-family:inherit;
+  font-size:13px;
+  font-weight:600;
+  color:#8C979D;
+  background:none;
+  border:0;
+  border-radius:7px;
+  padding:9px 4px;
+  cursor:pointer;
+}
+.flikar button[aria-selected="true"]{
+  background:#282D31;
+  color:#FFFFFF;
+}
+.flikar button:focus-visible{outline:2px solid #6FA8FF;outline-offset:-2px;}
+
+/* ---------- Scenen ---------- */
+
+.scen{position:fixed;top:52px;left:0;right:0;bottom:0;overflow:hidden;}
+
+.design{
+  position:absolute;
+  top:0;left:0;right:0;bottom:0;
+  display:none;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+}
+.design.pa{display:flex;}
+
+.vy{
+  position:absolute;
+  top:88px;left:0;right:0;bottom:76px;
+  display:none;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:0 18px;
+}
+.vy.pa{display:flex;}
+
+/* ---------- Logotypen, återskapad ---------- */
+
+.lockup{
+  position:absolute;
+  top:0;left:0;right:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px 16px 0;
+}
+.lockup .block{
+  width:34px;height:34px;
+  width:min(4.6vmin,42px);height:min(4.6vmin,42px);
+  margin-right:12px;
+  flex:0 0 auto;
+}
+.lockup .block i{display:block;height:50%;}
+.lockup .block i:first-child{background:#E52B38;}
+.lockup .block i:last-child{background:#000000;}
+.lockup .txt{text-align:left;line-height:1.12;}
+.lockup .txt b{
+  display:block;
+  font-size:15px;
+  font-size:min(2.4vmin,21px);
+  font-weight:600;
+  letter-spacing:-.01em;
+}
+.lockup .txt span{
+  display:block;
+  font-size:13px;
+  font-size:min(2.1vmin,18px);
+  font-weight:700;
+}
+
+.sidfot{
+  position:absolute;
+  bottom:0;left:0;right:0;
+  padding:0 16px 16px;
+}
+.sidfot .tagline{
+  margin:0 0 3px;
+  font-size:13px;
+  font-size:min(2vmin,17px);
+  font-style:italic;
+}
+.sidfot .anonym{
+  margin:0;
+  font-size:10px;
+  font-size:min(1.5vmin,13px);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+/* =========================================================
+   FÖRSLAG A — Ljus
+   Byråns ljusa ansikte: vit yta, logotypen överst, en röd
+   linje som bär färgen. Skalan behåller sina känslofärger —
+   man ska inte behöva läsa för att svara.
+   ========================================================= */
+
+#A{background:#FFFFFF;color:#000000;}
+#A .lockup{border-bottom:none;}
+#A .lockup .under{
+  position:absolute;
+  left:50%;
+  bottom:-12px;
+  width:56px;
+  height:3px;
+  margin-left:-28px;
+  background:#E52B38;
+}
+#A h1{
+  margin:0 0 36px;
+  font-size:26px;
+  font-size:clamp(20px,4.6vmin,42px);
+  font-weight:600;
+  letter-spacing:-.02em;
+  line-height:1.15;
+}
+#A .rad{display:flex;justify-content:center;width:100%;}
+#A .val{
+  flex:0 1 auto;
+  background:none;border:0;padding:0 6px;
+  font-family:inherit;
+  cursor:pointer;
+}
+#A .val svg{width:58px;width:min(17vw,23vh,168px);height:auto;display:block;margin:0 auto;}
+#A .val span{
+  display:block;
+  margin-top:9px;
+  font-size:11px;
+  font-size:clamp(10px,1.6vmin,15px);
+  font-weight:500;
+  color:#505050;
+}
+#A .val:active{transform:scale(.94);}
+#A .tips{
+  margin:32px 0 0;
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  color:#8A9296;
+}
+#A .sidfot .tagline{color:#505050;}
+#A .sidfot .anonym{color:#9AA0A3;}
+#A .tack .ring{
+  width:84px;height:84px;
+  border-radius:50%;
+  background:#E52B38;
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 18px;
+}
+#A .tack .ring svg{width:42px;height:42px;}
+#A .tack h2{margin:0 0 6px;font-size:36px;font-weight:700;letter-spacing:-.02em;}
+#A .tack p{margin:0;font-size:15px;color:#505050;}
+
+/* =========================================================
+   FÖRSLAG B — Svart & röd
+   Logotypens två färger som hel miljö. Stjärnorna fylls i
+   byråns röda — antalet bär betyget, färgen bär avsändaren.
+   ========================================================= */
+
+#B{background:#000000;color:#FFFFFF;}
+#B .lockup .block i:last-child{background:#1E1E1E;outline:1px solid #333333;}
+#B .lockup .txt{color:#FFFFFF;}
+#B h1{
+  margin:0 0 10px;
+  font-family:"Archivo",Arial,sans-serif;
+  font-weight:700;
+  font-size:28px;
+  font-size:clamp(22px,4.8vmin,44px);
+  line-height:1.12;
+  letter-spacing:-.02em;
+}
+#B .under{
+  margin:0 0 40px;
+  font-size:12px;
+  font-weight:500;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:#B33A42;
+}
+#B .rad{display:flex;justify-content:center;}
+#B .stj{
+  background:none;border:0;padding:0 5px;
+  cursor:pointer;
+  line-height:0;
+}
+#B .stj svg{width:46px;width:min(14vw,19vh,128px);height:auto;display:block;}
+#B .stj polygon{
+  fill:none;
+  stroke:#4A4A4A;
+  stroke-width:6;
+  stroke-linejoin:round;
+}
+#B .stj.tand polygon{fill:#E52B38;stroke:#E52B38;}
+#B .stj:active{transform:scale(.92);}
+#B .tips{
+  margin:36px 0 0;
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:#6E6E6E;
+}
+#B .sidfot .tagline{color:#B9B9B9;}
+#B .sidfot .anonym{color:#5E5E5E;}
+#B .tack h2{
+  font-family:"Archivo",Arial,sans-serif;
+  font-weight:800;
+  font-size:46px;
+  margin:0 0 10px;
+  color:#E52B38;
+  letter-spacing:-.02em;
+}
+#B .tack p{margin:0;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:#8C8C8C;}
+
+/* =========================================================
+   FÖRSLAG C — Blocken
+   Logotypens byggsten som betygsskala: ett till fem block,
+   fyllda i byråns röda. Inga symboler att tolka, störst
+   tryckytor, högst kontrast.
+   ========================================================= */
+
+#C{background:#F6F5F3;color:#000000;}
+#C .vy{top:84px;bottom:72px;}
+#C h1{
+  margin:0 0 18px;
+  font-family:"Archivo",Arial,sans-serif;
+  font-weight:800;
+  font-size:24px;
+  font-size:clamp(19px,4vmin,36px);
+  letter-spacing:-.03em;
+  line-height:1.1;
+}
+#C .staplar{
+  display:flex;
+  flex-direction:column;
+  width:100%;
+  max-width:640px;
+  flex:1;
+  max-height:520px;
+}
+#C .stapel{
+  flex:1;
+  margin-bottom:8px;
+  border:2px solid #D9D7D2;
+  border-radius:9px;
+  background:#FFFFFF;
+  font-family:inherit;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  padding:0 18px;
+  min-height:52px;
+}
+#C .stapel:last-child{margin-bottom:0;}
+#C .stapel:active{background:#E52B38;border-color:#E52B38;}
+#C .stapel:active .ord{color:#FFFFFF;}
+#C .stapel:active .kub i{background:#FFFFFF;border-color:#FFFFFF;}
+#C .stapel:active .kub i.tom{background:none;border-color:rgba(255,255,255,.55);}
+#C .kub{display:flex;flex:0 0 auto;}
+#C .kub i{
+  display:block;
+  width:13px;height:13px;
+  width:min(1.9vmin,17px);height:min(1.9vmin,17px);
+  margin-right:5px;
+  background:#E52B38;
+  border:2px solid #E52B38;
+}
+#C .kub i.tom{background:none;border-color:#D9D7D2;}
+#C .ord{
+  flex:1;
+  text-align:center;
+  font-family:"Archivo",Arial,sans-serif;
+  font-weight:700;
+  font-size:16px;
+  font-size:clamp(14px,2.4vmin,22px);
+  letter-spacing:-.01em;
+  color:#000000;
+  padding-right:calc(5 * (min(1.9vmin,17px) + 5px) + 2px);
+}
+#C .sidfot .tagline{color:#505050;}
+#C .sidfot .anonym{color:#9C9A95;}
+#C .tack .ruta{
+  width:76px;height:76px;
+  background:#E52B38;
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 18px;
+}
+#C .tack .ruta svg{width:38px;height:38px;}
+#C .tack h2{
+  font-family:"Archivo",Arial,sans-serif;
+  font-weight:800;
+  font-size:40px;
+  letter-spacing:-.03em;
+  margin:0 0 8px;
+}
+#C .tack p{margin:0;font-size:15px;color:#505050;}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
+</style>
+</head>
+<body>
+
+<div class="valjare">
+  <span class="namn">Förslag</span>
+  <div class="flikar" role="tablist">
+    <button type="button" role="tab" data-v="A" aria-selected="true">A · Ljus</button>
+    <button type="button" role="tab" data-v="B" aria-selected="false">B · Svart & röd</button>
+    <button type="button" role="tab" data-v="C" aria-selected="false">C · Blocken</button>
+  </div>
+</div>
+
+<div class="scen">
+
+  <!-- ============ A · Ljus ============ -->
+  <section class="design pa" id="A">
+    <div class="lockup">
+      <span class="block" aria-hidden="true"><i></i><i></i></span>
+      <span class="txt"><b>Revisionskonsulterna</b><span>J Hägglund AB</span></span>
+      <span class="under" aria-hidden="true"></span>
+    </div>
+    <div class="vy pa" data-vy="fraga">
+      <h1>Hur var ditt besök hos oss idag?</h1>
+      <div class="rad" id="A-rad"></div>
+      <p class="tips">Tryck på en symbol</p>
+    </div>
+    <div class="vy tack" data-vy="tack">
+      <div class="ring">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <path d="M26,52 L43,69 L74,34" fill="none" stroke="#FFFFFF"
+                stroke-width="11" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+      </div>
+      <h2>Tack!</h2>
+      <p>Ditt svar är registrerat.</p>
+    </div>
+    <div class="sidfot">
+      <p class="tagline">”Engagemanget gör skillnaden”</p>
+      <p class="anonym">Svaren är anonyma</p>
+    </div>
+  </section>
+
+  <!-- ============ B · Svart & röd ============ -->
+  <section class="design" id="B">
+    <div class="lockup">
+      <span class="block" aria-hidden="true"><i></i><i></i></span>
+      <span class="txt"><b>Revisionskonsulterna</b><span>J Hägglund AB</span></span>
+    </div>
+    <div class="vy pa" data-vy="fraga">
+      <h1>Hur skulle du betygsätta<br>ditt besök?</h1>
+      <p class="under">Engagemanget gör skillnaden</p>
+      <div class="rad" id="B-rad"></div>
+      <p class="tips">Välj antal stjärnor</p>
+    </div>
+    <div class="vy tack" data-vy="tack">
+      <h2>Tack.</h2>
+      <p>Vi uppskattar att du tog dig tid</p>
+    </div>
+    <div class="sidfot">
+      <p class="anonym">Svaren är anonyma</p>
+    </div>
+  </section>
+
+  <!-- ============ C · Blocken ============ -->
+  <section class="design" id="C">
+    <div class="lockup">
+      <span class="block" aria-hidden="true"><i></i><i></i></span>
+      <span class="txt"><b>Revisionskonsulterna</b><span>J Hägglund AB</span></span>
+    </div>
+    <div class="vy pa" data-vy="fraga">
+      <h1>Vad tycker du om ditt besök?</h1>
+      <div class="staplar" id="C-rad"></div>
+    </div>
+    <div class="vy tack" data-vy="tack">
+      <div class="ruta">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <path d="M26,52 L43,69 L74,34" fill="none" stroke="#FFFFFF"
+                stroke-width="12" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+      </div>
+      <h2>Tack!</h2>
+      <p>Ditt svar är registrerat.</p>
+    </div>
+    <div class="sidfot">
+      <p class="tagline">”Engagemanget gör skillnaden”</p>
+      <p class="anonym">Svaren är anonyma</p>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var NS = "http://www.w3.org/2000/svg";
+  var TACK_MS = 2600;
+
+  var ORD = ["Mycket dåligt","Dåligt","Okej","Bra","Mycket bra"];
+
+  var ANSIKTEN = [
+    { stark:"#B8433A", ton:"#F8E7E5", mun:"M30,72 Q50,52 70,72" },
+    { stark:"#C97633", ton:"#FAEDE1", mun:"M30,69 Q50,58 70,69" },
+    { stark:"#A8871F", ton:"#F7F0DC", mun:"M31,64 L69,64"       },
+    { stark:"#6E9440", ton:"#EDF3E4", mun:"M30,60 Q50,71 70,60" },
+    { stark:"#2C7A5B", ton:"#E2F0EA", mun:"M30,57 Q50,78 70,57" }
+  ];
+
+  function el(tag, attr){
+    var e = document.createElementNS(NS, tag);
+    for (var k in attr) e.setAttribute(k, attr[k]);
+    return e;
+  }
+
+  /* ---- A: ansiktena ---- */
+
+  var aRad = document.getElementById("A-rad");
+  for (var i = 0; i < 5; i++){
+    (function(i){
+      var a = ANSIKTEN[i];
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "val";
+      b.setAttribute("aria-label", ORD[i]);
+      b.innerHTML =
+        '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+          '<circle cx="50" cy="50" r="45" fill="' + a.ton + '" stroke="' + a.stark + '" stroke-width="4"/>' +
+          '<circle cx="35" cy="40" r="5.2" fill="' + a.stark + '"/>' +
+          '<circle cx="65" cy="40" r="5.2" fill="' + a.stark + '"/>' +
+          '<path d="' + a.mun + '" fill="none" stroke="' + a.stark + '" stroke-width="5.5" stroke-linecap="round"/>' +
+        '</svg><span>' + ORD[i] + '</span>';
+      b.onclick = function(){ svara("A"); };
+      aRad.appendChild(b);
+    })(i);
+  }
+
+  /* ---- B: stjärnorna ---- */
+
+  var bRad = document.getElementById("B-rad");
+  var bStj = [];
+  var bVald = false;
+
+  for (var j = 0; j < 5; j++){
+    (function(j){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "stj";
+      b.setAttribute("aria-label", (j + 1) + " av 5");
+      var svg = el("svg", { viewBox:"0 0 100 100" });
+      svg.appendChild(el("polygon", {
+        points:"50,8 61,38 94,38 67,58 77,90 50,70 23,90 33,58 6,38 39,38"
+      }));
+      b.appendChild(svg);
+      b.onmouseenter = function(){ if (!bVald) tand(j); };
+      b.onmouseleave = function(){ if (!bVald) tand(-1); };
+      b.onclick = function(){
+        if (bVald) return;
+        bVald = true;
+        tand(j);
+        /* Låt stjärnorna stå tända en stund — man ska hinna se att
+           valet registrerades innan tacket tar över.                */
+        setTimeout(function(){ svara("B"); }, 450);
+      };
+      bRad.appendChild(b);
+      bStj.push(b);
+    })(j);
+  }
+
+  function tand(till){
+    for (var k = 0; k < bStj.length; k++){
+      if (k <= till) bStj[k].className = "stj tand";
+      else bStj[k].className = "stj";
+    }
+  }
+
+  function bNollstall(){ bVald = false; tand(-1); }
+
+  /* ---- C: blocken ---- */
+
+  var cRad = document.getElementById("C-rad");
+  for (var m = 0; m < 5; m++){
+    (function(m){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "stapel";
+      b.setAttribute("aria-label", ORD[m] + " — " + (m + 1) + " av 5");
+      var kub = '<span class="kub" aria-hidden="true">';
+      for (var q = 0; q < 5; q++){
+        kub += '<i class="' + (q <= m ? "" : "tom") + '"></i>';
+      }
+      kub += '</span>';
+      b.innerHTML = kub + '<span class="ord">' + ORD[m] + '</span>';
+      b.onclick = function(){ svara("C"); };
+      cRad.appendChild(b);
+    })(m);
+  }
+
+  /* ---- Tryck → tack → tillbaka ---- */
+
+  var last = {}, timers = {};
+
+  function svara(id){
+    if (last[id]) return;
+    last[id] = true;
+
+    byt(id, "tack");
+    clearTimeout(timers[id]);
+    timers[id] = setTimeout(function(){
+      byt(id, "fraga");
+      if (id === "B") bNollstall();
+      last[id] = false;
+    }, TACK_MS);
+  }
+
+  function byt(id, vilken){
+    var vyer = document.getElementById(id).querySelectorAll(".vy");
+    for (var i = 0; i < vyer.length; i++){
+      if (vyer[i].getAttribute("data-vy") === vilken) vyer[i].className = "vy pa" + (vilken === "tack" ? " tack" : "");
+      else vyer[i].className = "vy" + (vyer[i].getAttribute("data-vy") === "tack" ? " tack" : "");
+    }
+  }
+
+  /* ---- Väljaren ---- */
+
+  var flikar = document.querySelectorAll(".flikar button");
+  for (var f = 0; f < flikar.length; f++){
+    (function(knapp){
+      knapp.onclick = function(){
+        for (var n = 0; n < flikar.length; n++){
+          flikar[n].setAttribute("aria-selected", flikar[n] === knapp ? "true" : "false");
+        }
+        var vald = knapp.getAttribute("data-v");
+        var alla = document.querySelectorAll(".design");
+        for (var d = 0; d < alla.length; d++){
+          alla[d].className = "design" + (alla[d].id === vald ? " pa" : "");
+        }
+        byt(vald, "fraga");
+        if (vald === "B") bNollstall();
+        last[vald] = false;
+      };
+    })(flikar[f]);
+  }
+
+  document.oncontextmenu = function(e){ e.preventDefault(); };
+
+})();
+</script>
+</body>
+</html>

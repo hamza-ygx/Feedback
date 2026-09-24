@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Eventskärmar — Revisionskonsulterna J Hägglund</title>
+<meta name="theme-color" content="#1A0E10">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Archivo:wght@600;700;800&display=swap">
+<style>
+/* =========================================================
+   Eventskärmar — tre exempel
+   Revisionskonsulterna J Hägglund AB
+
+   Eventet hämtas ur databasen (aktivt_event) och skärmen
+   håller sig själv uppdaterad: namn, agenda och alternativ
+   kommer ur eventposten, agendans pågående punkt markeras av
+   klockan, och i skarpt läge (?auto=1) byter plattan själv
+   tillbaka till vanliga skärmen när eventet är slut.
+
+   I provläget (utan ?auto) skrivs ingenting till databasen.
+   ========================================================= */
+
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;}
+
+body{
+  font-family:"Instrument Sans",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+  -webkit-user-select:none;
+  touch-action:manipulation;
+  overflow:hidden;
+  background:#0B0D0C;
+}
+
+/* ---------- Väljaren (bara i provläget) ---------- */
+
+.valjare{
+  position:fixed;top:0;left:0;right:0;height:52px;z-index:10;
+  background:#15181A;display:flex;align-items:center;padding:0 10px;
+}
+.valjare.dold{display:none;}
+.valjare .namn{
+  color:#7F8B92;font-size:11px;font-weight:600;letter-spacing:.12em;
+  text-transform:uppercase;padding:0 10px 0 6px;white-space:nowrap;
+}
+.flikar{display:flex;flex:1;}
+.flikar button{
+  flex:1;font-family:inherit;font-size:13px;font-weight:600;color:#8C979D;
+  background:none;border:0;border-radius:7px;padding:9px 4px;cursor:pointer;
+}
+.flikar button[aria-selected="true"]{background:#282D31;color:#FFFFFF;}
+.flikar button:focus-visible{outline:2px solid #6FA8FF;outline-offset:-2px;}
+
+.scen{position:fixed;top:52px;left:0;right:0;bottom:0;overflow:hidden;}
+.scen.hel{top:0;}
+
+.skarm{position:absolute;top:0;left:0;right:0;bottom:0;display:none;}
+.skarm.pa{display:block;}
+
+/* ---------- Gemensamt: logotyp ---------- */
+
+.lockup{
+  position:absolute;top:0;left:0;right:0;z-index:2;
+  display:flex;align-items:center;justify-content:center;
+  padding:20px 16px 0;pointer-events:none;
+}
+.lockup .block{width:30px;height:30px;width:min(4vmin,38px);height:min(4vmin,38px);margin-right:11px;flex:0 0 auto;}
+.lockup .block i{display:block;height:50%;}
+.lockup .block i:first-child{background:#E52B38;}
+.lockup .txt{text-align:left;line-height:1.12;}
+.lockup .txt b{display:block;font-size:14px;font-size:min(2.2vmin,19px);font-weight:600;letter-spacing:-.01em;}
+.lockup .txt span{display:block;font-size:12px;font-size:min(1.9vmin,16px);font-weight:700;}
+
+/* =========================================================
+   SKÄRM 1 — Eventbetyg
+   Mörk kväll: djup röd–svart tonad yta, fem stora siffror.
+   Ett helt annat språk än vardagens ansikten.
+   ========================================================= */
+
+#S1{background:#1A0E10;background:linear-gradient(160deg,#2B1114 0%,#1A0E10 55%,#0D0708 100%);color:#F5EFE9;text-align:center;}
+#S1 .lockup .block i:last-child{background:#241417;outline:1px solid #3A2226;}
+#S1 .vy{
+  position:absolute;top:70px;left:0;right:0;bottom:56px;
+  display:none;flex-direction:column;align-items:center;justify-content:center;padding:0 18px;
+}
+#S1 .vy.pa{display:flex;}
+#S1 .over{
+  margin:0 0 6px;font-size:12px;font-weight:600;letter-spacing:.22em;
+  text-transform:uppercase;color:#B3555E;
+}
+#S1 h1{
+  margin:0 0 44px;font-family:"Archivo",Arial,sans-serif;font-weight:700;
+  font-size:34px;font-size:clamp(24px,4.4vmin,44px);
+  letter-spacing:-.02em;line-height:1.15;max-width:24ch;
+}
+#S1 .rad{display:flex;justify-content:center;}
+#S1 .siffra{
+  width:96px;height:96px;
+  width:min(11vmin,118px);height:min(11vmin,118px);
+  margin:0 min(1.4vmin,14px);
+  border:2.5px solid #6B4046;border-radius:50%;
+  background:none;color:#F5EFE9;
+  font-family:"Archivo",Arial,sans-serif;font-weight:700;
+  font-size:34px;font-size:min(4.6vmin,46px);
+  cursor:pointer;
+  transition:transform .15s ease,background .15s ease,border-color .15s ease,color .15s ease;
+}
+#S1 .siffra:active,#S1 .siffra.vald{background:#E52B38;border-color:#E52B38;color:#FFFFFF;transform:scale(1.06);}
+@media (hover:hover){#S1 .siffra:hover{border-color:#E52B38;}}
+#S1 .siffra:focus-visible{outline:3px solid #E52B38;outline-offset:4px;}
+#S1 .skala{
+  display:flex;justify-content:space-between;
+  width:min(62vmin,640px);margin-top:18px;
+  font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#8A6A6E;
+}
+#S1 .tack h2{
+  margin:0 0 10px;font-family:"Archivo",Arial,sans-serif;font-weight:800;
+  font-size:52px;color:#E52B38;letter-spacing:-.02em;
+}
+#S1 .tack p{margin:0;font-size:15px;letter-spacing:.05em;text-transform:uppercase;color:#9A7B7F;}
+#S1 .fot{
+  position:absolute;bottom:0;left:0;right:0;padding:0 16px 16px;
+  font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#6B4A4E;
+}
+
+/* =========================================================
+   SKÄRM 2 — Välkomstskärm
+   Ljus och stilla: ingen interaktion alls. Agendan markerar
+   själv var i programmet man är, klockan går.
+   ========================================================= */
+
+#S2{background:#FAF9F7;color:#191A17;}
+#S2 .klocka{
+  position:absolute;top:20px;right:24px;z-index:2;
+  font-family:"Archivo",Arial,sans-serif;font-weight:700;
+  font-size:min(3vmin,26px);color:#191A17;
+  font-variant-numeric:tabular-nums;
+}
+#S2 .inner{
+  position:absolute;top:84px;left:0;right:0;bottom:60px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:0 clamp(16px,5vw,64px);
+}
+#S2 .valkommen{
+  margin:0 0 4px;font-size:14px;font-size:min(2.2vmin,19px);
+  font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#E52B38;
+}
+#S2 h1{
+  margin:0 0 34px;font-family:"Archivo",Arial,sans-serif;font-weight:800;
+  font-size:38px;font-size:clamp(26px,5vmin,52px);
+  letter-spacing:-.025em;line-height:1.08;text-align:center;max-width:22ch;
+}
+#S2 .agenda{width:min(720px,100%);display:flex;flex-direction:column;}
+#S2 .punkt{
+  display:flex;align-items:baseline;gap:20px;
+  padding:13px 18px;border-left:4px solid transparent;
+  color:#5C6058;transition:background .3s ease,border-color .3s ease,color .3s ease;
+}
+#S2 .punkt .tid{
+  flex:0 0 auto;width:64px;
+  font-family:"Archivo",Arial,sans-serif;font-weight:700;
+  font-size:16px;font-size:min(2.3vmin,20px);
+  font-variant-numeric:tabular-nums;
+}
+#S2 .punkt .text{font-size:17px;font-size:min(2.5vmin,22px);font-weight:500;}
+#S2 .punkt.nu{background:#FFFFFF;border-left-color:#E52B38;color:#191A17;box-shadow:0 2px 10px rgba(25,26,23,.06);}
+#S2 .punkt.nu .text{font-weight:700;}
+#S2 .punkt.klar{opacity:.45;}
+#S2 .fot{
+  position:absolute;bottom:0;left:0;right:0;padding:0 16px 16px;
+  display:flex;justify-content:center;gap:26px;
+  font-size:12px;font-size:min(1.8vmin,15px);color:#8A8D86;
+}
+#S2 .fot b{color:#191A17;font-weight:600;}
+
+/* =========================================================
+   SKÄRM 3 — Omröstning
+   Fyra stora fullfärgsplattor, en fråga. Helt eget språk:
+   varken betyg eller information — ett val.
+   ========================================================= */
+
+#S3{background:#141414;color:#FFFFFF;}
+#S3 .lockup .block i:last-child{background:#1E1E1E;outline:1px solid #333333;}
+#S3 .fraga{
+  position:absolute;top:64px;left:0;right:0;z-index:2;text-align:center;padding:0 18px;
+}
+#S3 .fraga h1{
+  margin:0;font-family:"Archivo",Arial,sans-serif;font-weight:800;
+  font-size:26px;font-size:clamp(20px,3.6vmin,36px);letter-spacing:-.02em;
+}
+#S3 .rutor{
+  position:absolute;top:128px;left:14px;right:14px;bottom:52px;
+  display:flex;flex-wrap:wrap;gap:10px;
+}
+#S3 .ruta{
+  flex:1 1 calc(50% - 10px);min-width:calc(50% - 10px);
+  border:0;border-radius:12px;cursor:pointer;
+  font-family:"Archivo",Arial,sans-serif;font-weight:700;
+  font-size:22px;font-size:min(3.4vmin,32px);
+  letter-spacing:-.01em;color:#FFFFFF;
+  display:flex;align-items:center;justify-content:center;
+  text-align:center;padding:12px;
+  transition:transform .15s ease,filter .15s ease;
+}
+#S3 .ruta:active{transform:scale(.97);}
+@media (hover:hover){#S3 .ruta:hover{filter:brightness(1.12);}}
+#S3 .ruta:focus-visible{outline:3px solid #FFFFFF;outline-offset:3px;}
+#S3 .ruta.f1{background:#37596E;}
+#S3 .ruta.f2{background:#7A5C61;}
+#S3 .ruta.f3{background:#5F7A63;}
+#S3 .ruta.f4{background:#8C6D3F;}
+#S3 .tackvy{
+  position:absolute;inset:0;z-index:3;display:none;
+  flex-direction:column;align-items:center;justify-content:center;text-align:center;
+}
+#S3 .tackvy.pa{display:flex;}
+#S3 .tackvy .bock{
+  width:80px;height:80px;border-radius:50%;background:#FFFFFF;
+  display:flex;align-items:center;justify-content:center;margin-bottom:20px;
+}
+#S3 .tackvy .bock svg{width:40px;height:40px;}
+#S3 .tackvy h2{margin:0 0 8px;font-family:"Archivo",Arial,sans-serif;font-weight:800;font-size:40px;letter-spacing:-.02em;}
+#S3 .tackvy p{margin:0;font-size:15px;color:rgba(255,255,255,.75);}
+#S3 .fot{
+  position:absolute;bottom:0;left:0;right:0;padding:0 16px 14px;text-align:center;
+  font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#6E6E6E;
+}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
+</style>
+</head>
+<body>
+
+<div class="valjare" id="valjare">
+  <span class="namn">Event</span>
+  <div class="flikar" role="tablist">
+    <button type="button" role="tab" data-s="S1" aria-selected="true">1 · Eventbetyg</button>
+    <button type="button" role="tab" data-s="S2" aria-selected="false">2 · Välkomstskärm</button>
+    <button type="button" role="tab" data-s="S3" aria-selected="false">3 · Omröstning</button>
+  </div>
+</div>
+
+<div class="scen" id="scen">
+
+  <!-- ============ 1 · Eventbetyg ============ -->
+  <section class="skarm pa" id="S1">
+    <div class="lockup">
+      <span class="block" aria-hidden="true"><i></i><i></i></span>
+      <span class="txt"><b>Revisionskonsulterna</b><span>J Hägglund AB</span></span>
+    </div>
+    <div class="vy pa" data-vy="fraga">
+      <p class="over">Tack för idag</p>
+      <h1 id="S1-rubrik">Hur var seminariet?</h1>
+      <div class="rad" id="S1-rad" role="group" aria-label="Betygsätt eventet"></div>
+      <div class="skala"><span>Inte alls bra</span><span>Utmärkt</span></div>
+    </div>
+    <div class="vy tack" data-vy="tack" aria-live="polite">
+      <h2>Tack!</h2>
+      <p>Vi ses gärna igen</p>
+    </div>
+    <p class="fot">Svaren är anonyma</p>
+  </section>
+
+  <!-- ============ 2 · Välkomstskärm ============ -->
+  <section class="skarm" id="S2">
+    <div class="lockup">
+      <span class="block" aria-hidden="true"><i></i><i></i></span>
+      <span class="txt"><b>Revisionskonsulterna</b><span>J Hägglund AB</span></span>
+    </div>
+    <div class="klocka num" id="S2-klocka">--:--</div>
+    <div class="inner">
+      <p class="valkommen">Välkommen till</p>
+      <h1 id="S2-rubrik">—</h1>
+      <div class="agenda" id="S2-agenda"></div>
+    </div>
+    <div class="fot" id="S2-fot"></div>
+  </section>
+
+  <!-- ============ 3 · Omröstning ============ -->
+  <section class="skarm" id="S3">
+    <div class="lockup">
+      <span class="block" aria-hidden="true"><i></i><i></i></span>
+      <span class="txt"><b>Revisionskonsulterna</b><span>J Hägglund AB</span></span>
+    </div>
+    <div class="fraga"><h1 id="S3-fraga">—</h1></div>
+    <div class="rutor" id="S3-rutor" role="group" aria-label="Rösta på ett alternativ"></div>
+    <div class="tackvy" id="S3-tack" aria-live="polite">
+      <div class="bock">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <path d="M26,52 L43,69 L74,34" fill="none" stroke="#141414"
+                stroke-width="12" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+      </div>
+      <h2>Tack för din röst!</h2>
+      <p>Resultatet hjälper oss välja nästa ämne</p>
+    </div>
+    <p class="fot">En röst per person — tack!</p>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* =====================================================
+     INSTÄLLNINGAR — samma projekt som skärmen och översikten
+     ===================================================== */
+
+  var DB = {
+    url:    "https://zersylbcdxfqgtmzvlaf.supabase.co",
+    nyckel: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InplcnN5bGJjZHhmcWd0bXp2bGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5OTYwNjUsImV4cCI6MjEwMjU3MjA2NX0.bURzmunUDxaHoq750S8BTb_Nz1_9Lxzg3Rtlwnd5KZ8"
+  };
+
+  /* ===================================================== */
+
+  var TACK_MS = 2600;
+  var KOLL_MS = 2 * 60 * 1000;   // hur ofta plattan frågar om eventläget
+
+  /* Skarpt läge: plattan har själv bytt hit från vanliga skärmen.
+     Då styr eventets typ vilken skärm som visas, svar skickas till
+     databasen, och när eventet är slut byter vi tillbaka.          */
+  var SKARP = /(\?|&)auto=1/.test(location.search);
+
+  /* Exempelevent — används i provläget och när databasen inte nås,
+     så att skärmarna alltid har något att visa.                    */
+  var EXEMPEL = {
+    id: 0,
+    namn: "Frukostseminarium — Nya 3:12-reglerna",
+    typ: "valkommen",
+    extra: {
+      plats: "Brogatan 9, plan 2",
+      wifi: "RKJH-Gäst",
+      agenda: [
+        { tid:"08:00", punkt:"Kaffe och smörgås" },
+        { tid:"08:30", punkt:"Nya 3:12-reglerna — vad ändras?" },
+        { tid:"09:15", punkt:"Frågestund" },
+        { tid:"09:45", punkt:"Mingel och enskilda frågor" }
+      ],
+      fraga: "Vad vill ni se ett seminarium om härnäst?",
+      alternativ: ["Skatteplanering","Generationsskifte","Moms & EU-handel","Digital bokföring"]
+    }
+  };
+
+  var event = EXEMPEL;
+  var $ = function(id){ return document.getElementById(id); };
+
+  /* -----------------------------------------------------
+     Hämta aktivt event
+     ----------------------------------------------------- */
+
+  function hamtaEvent(){
+    return fetch(DB.url + "/rest/v1/rpc/aktivt_event", {
+      method:"POST",
+      headers:{ "apikey":DB.nyckel, "Authorization":"Bearer "+DB.nyckel, "Content-Type":"application/json" },
+      body:"{}"
+    }).then(function(r){
+      if (!r.ok) throw new Error("HTTP "+r.status);
+      return r.json();
+    });
+  }
+
+  /* -----------------------------------------------------
+     Skicka svar — bara i skarpt läge. Provtryckningar i
+     väljaren skrivs aldrig till databasen.
+     ----------------------------------------------------- */
+
+  function skicka(betyg, prefix){
+    if (!SKARP || !event.id) return;
+    var enhet = (prefix + ":" + event.id).slice(0, 40);
+    fetch(DB.url + "/rest/v1/svar", {
+      method:"POST",
+      headers:{ "apikey":DB.nyckel, "Authorization":"Bearer "+DB.nyckel,
+                "Content-Type":"application/json", "Prefer":"return=minimal" },
+      body: JSON.stringify([{ betyg:betyg, tid:new Date().toISOString(), enhet:enhet }])
+    }).catch(function(e){ if (window.console) console.warn("[event]", e.message); });
+  }
+
+  /* -----------------------------------------------------
+     Skärm 1 — Eventbetyg
+     ----------------------------------------------------- */
+
+  var s1Rad = $("S1-rad"), s1Last = false, s1Timer = null;
+
+  for (var i = 1; i <= 5; i++){
+    (function(i){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "siffra";
+      b.textContent = i;
+      b.setAttribute("aria-label", i + " av 5");
+      b.onclick = function(){
+        if (s1Last) return;
+        s1Last = true;
+        b.className = "siffra vald";
+        skicka(i, "event");
+        setTimeout(function(){ s1Byt("tack"); }, 260);
+        clearTimeout(s1Timer);
+        s1Timer = setTimeout(function(){
+          s1Byt("fraga");
+          b.className = "siffra";
+          s1Last = false;
+        }, TACK_MS + 260);
+      };
+      s1Rad.appendChild(b);
+    })(i);
+  }
+
+  function s1Byt(vilken){
+    var vyer = document.querySelectorAll("#S1 .vy");
+    for (var i = 0; i < vyer.length; i++){
+      var ar = vyer[i].getAttribute("data-vy") === vilken;
+      vyer[i].className = "vy" + (ar ? " pa" : "") +
+        (vyer[i].getAttribute("data-vy") === "tack" ? " tack" : "");
+    }
+  }
+
+  /* -----------------------------------------------------
+     Skärm 2 — Välkomstskärm
+     ----------------------------------------------------- */
+
+  function s2Fyll(){
+    $("S2-rubrik").textContent = event.namn;
+    var x = event.extra || {};
+    var agenda = x.agenda || [];
+    var mount = $("S2-agenda");
+    mount.innerHTML = "";
+    agenda.forEach(function(p){
+      var d = document.createElement("div");
+      d.className = "punkt";
+      d.innerHTML = '<span class="tid">'+p.tid+'</span><span class="text">'+p.punkt+'</span>';
+      mount.appendChild(d);
+    });
+    var fot = [];
+    if (x.plats) fot.push("<span><b>Plats</b> &nbsp;"+x.plats+"</span>");
+    if (x.wifi)  fot.push("<span><b>Wifi</b> &nbsp;"+x.wifi+"</span>");
+    $("S2-fot").innerHTML = fot.join("");
+    s2Uppdatera();
+  }
+
+  /* Klockan + markering av pågående agendapunkt. Det här är det
+     synliga beviset på att skärmen sköter sig själv: punkterna
+     tänds och släcks av tiden, ingen rör något.                  */
+
+  function s2Uppdatera(){
+    var nu = new Date();
+    $("S2-klocka").textContent =
+      String(nu.getHours()).padStart(2,"0") + ":" + String(nu.getMinutes()).padStart(2,"0");
+
+    var minuter = nu.getHours()*60 + nu.getMinutes();
+    var punkter = document.querySelectorAll("#S2 .punkt");
+    var agenda = (event.extra && event.extra.agenda) || [];
+    var aktIndex = -1;
+    agenda.forEach(function(p, i){
+      var m = p.tid.split(":");
+      if (minuter >= (+m[0])*60 + (+m[1])) aktIndex = i;
+    });
+    for (var i = 0; i < punkter.length; i++){
+      punkter[i].className = "punkt" +
+        (i === aktIndex ? " nu" : i < aktIndex ? " klar" : "");
+    }
+  }
+  setInterval(s2Uppdatera, 15000);
+
+  /* -----------------------------------------------------
+     Skärm 3 — Omröstning
+     ----------------------------------------------------- */
+
+  var s3Last = false, s3Timer = null;
+
+  function s3Fyll(){
+    var x = event.extra || {};
+    $("S3-fraga").textContent = x.fraga || "Vad vill ni se härnäst?";
+    var alternativ = (x.alternativ || []).slice(0, 4);
+    var mount = $("S3-rutor");
+    mount.innerHTML = "";
+    alternativ.forEach(function(alt, i){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "ruta f" + (i+1);
+      b.textContent = alt;
+      b.onclick = function(){
+        if (s3Last) return;
+        s3Last = true;
+        skicka(i+1, "val");
+        var tack = $("S3-tack");
+        tack.style.background = getComputedStyle(b).backgroundColor;
+        tack.className = "tackvy pa";
+        clearTimeout(s3Timer);
+        s3Timer = setTimeout(function(){
+          tack.className = "tackvy";
+          s3Last = false;
+        }, TACK_MS);
+      };
+      mount.appendChild(b);
+    });
+  }
+
+  /* -----------------------------------------------------
+     Väljaren (provläge) / typstyrning (skarpt läge)
+     ----------------------------------------------------- */
+
+  function visaSkarm(id){
+    var alla = document.querySelectorAll(".skarm");
+    for (var i = 0; i < alla.length; i++){
+      alla[i].className = "skarm" + (alla[i].id === id ? " pa" : "");
+    }
+  }
+
+  var flikar = document.querySelectorAll(".flikar button");
+  for (var f = 0; f < flikar.length; f++){
+    (function(knapp){
+      knapp.onclick = function(){
+        for (var n = 0; n < flikar.length; n++){
+          flikar[n].setAttribute("aria-selected", flikar[n] === knapp ? "true" : "false");
+        }
+        visaSkarm(knapp.getAttribute("data-s"));
+      };
+    })(flikar[f]);
+  }
+
+  function typTillSkarm(typ){
+    return typ === "betyg" ? "S1" : typ === "omrostning" ? "S3" : "S2";
+  }
+
+  function fyllAllt(){
+    $("S1-rubrik").textContent = "Hur var " +
+      (event.namn.length > 34 ? "dagens event" : event.namn.split(" — ")[0].toLowerCase()) + "?";
+    s2Fyll();
+    s3Fyll();
+  }
+
+  /* -----------------------------------------------------
+     Start + läges-koll
+     ----------------------------------------------------- */
+
+  if (SKARP){
+    $("valjare").className = "valjare dold";
+    $("scen").className = "scen hel";
+  }
+
+  function koll(){
+    hamtaEvent().then(function(e){
+      if (e && e.id){
+        event = e;
+        fyllAllt();
+        if (SKARP) visaSkarm(typTillSkarm(e.typ));
+      } else if (SKARP){
+        /* Eventet är slut — tillbaka till vanliga skärmen. */
+        location.replace("index.html");
+      }
+    }).catch(function(){ /* nät nere: behåll det vi har */ });
+  }
+
+  fyllAllt();          // exempeldata direkt, byts när riktiga eventet hämtats
+  koll();
+  setInterval(koll, KOLL_MS);
+
+  document.oncontextmenu = function(e){ e.preventDefault(); };
+})();
+</script>
+</body>
+</html>

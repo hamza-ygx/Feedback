@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Hur var ditt besök? — Revisionskonsulterna J Hägglund</title>
+<meta name="theme-color" content="#FFFFFF">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* =========================================================
+   Feedbackskärm — demo
+   Steg 1 av 3:  [ SKÄRMEN ]  →  databas  →  översikt
+   ========================================================= */
+
+:root{
+  --paper:#FFFFFF;
+  --ground:#F4F5F6;
+  --ink:#1B1F22;
+  --muted:#6B7479;
+  --line:#E3E6E8;
+
+  --c1:#B8433A;  --t1:#F8E7E5;
+  --c2:#C97633;  --t2:#FAEDE1;
+  --c3:#A8871F;  --t3:#F7F0DC;
+  --c4:#6E9440;  --t4:#EDF3E4;
+  --c5:#2C7A5B;  --t5:#E2F0EA;
+
+  --font:"Instrument Sans","Helvetica Neue",Arial,sans-serif;
+}
+
+*{box-sizing:border-box;}
+
+html,body{height:100%;}
+
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:var(--font);
+  -webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+  -webkit-user-select:none;
+  touch-action:manipulation;
+  overflow:hidden;
+}
+
+.kiosk{
+  position:fixed;
+  inset:0;
+  background:var(--paper);
+  display:flex;
+  flex-direction:column;
+}
+
+/* ---------- Brand ---------- */
+
+.brand{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:.7rem;
+  padding:clamp(1rem,3vmin,2rem);
+  cursor:default;
+}
+.brand .mark{
+  width:clamp(26px,4.2vmin,38px);
+  height:clamp(26px,4.2vmin,38px);
+  border-radius:5px;
+  background:var(--ink);
+  color:var(--paper);
+  display:grid;
+  place-items:center;
+  font-size:clamp(.6rem,1.5vmin,.78rem);
+  font-weight:700;
+  letter-spacing:.02em;
+}
+.brand .name{
+  font-size:clamp(.78rem,1.85vmin,1.02rem);
+  font-weight:600;
+  letter-spacing:.01em;
+  color:var(--muted);
+}
+
+/* ---------- Views ---------- */
+
+.stage{
+  flex:1 1 auto;
+  position:relative;
+  min-height:0;
+}
+
+.view{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:clamp(1.5rem,4.5vmin,3.5rem);
+  padding:0 clamp(1rem,3vmin,2.5rem);
+  opacity:0;
+  visibility:hidden;
+  transition:opacity .28s ease;
+}
+.view.is-on{
+  opacity:1;
+  visibility:visible;
+}
+
+/* ---------- Question ---------- */
+
+h1{
+  margin:0;
+  font-size:clamp(1.5rem,4.6vmin,3.1rem);
+  font-weight:600;
+  letter-spacing:-.02em;
+  line-height:1.15;
+  text-align:center;
+  text-wrap:balance;
+}
+
+.scale{
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  gap:clamp(.4rem,2.2vmin,2.4rem);
+  width:100%;
+}
+
+.face{
+  flex:0 1 auto;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:clamp(.45rem,1.5vmin,1rem);
+  padding:0;
+  border:0;
+  background:none;
+  font-family:inherit;
+  cursor:pointer;
+  border-radius:14px;
+  transition:transform .12s ease;
+}
+.face svg{
+  width:min(16vw,19vh,152px);
+  height:auto;
+  display:block;
+}
+.face .label{
+  font-size:clamp(.62rem,1.6vmin,1rem);
+  font-weight:500;
+  color:var(--muted);
+  text-align:center;
+  line-height:1.25;
+}
+.face:active{transform:scale(.94);}
+.face:focus-visible{
+  outline:3px solid var(--ink);
+  outline-offset:6px;
+}
+@media (hover:hover){
+  .face:hover{transform:scale(1.05);}
+}
+
+.hint{
+  margin:0;
+  font-size:clamp(.72rem,1.7vmin,.95rem);
+  font-weight:500;
+  color:var(--muted);
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+
+/* ---------- Thanks ---------- */
+
+.tick{
+  width:clamp(58px,11vmin,104px);
+  height:clamp(58px,11vmin,104px);
+}
+.tick circle{fill:var(--t5);}
+.tick path{
+  fill:none;
+  stroke:var(--c5);
+  stroke-width:7;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  stroke-dasharray:48;
+  stroke-dashoffset:48;
+}
+.view.is-on .tick path{
+  animation:draw .42s .1s ease forwards;
+}
+@keyframes draw{to{stroke-dashoffset:0;}}
+
+#thanks h2{
+  margin:0;
+  font-size:clamp(1.7rem,5.2vmin,3.4rem);
+  font-weight:600;
+  letter-spacing:-.02em;
+}
+#thanks p{
+  margin:0;
+  font-size:clamp(.9rem,2.2vmin,1.35rem);
+  color:var(--muted);
+  text-align:center;
+}
+#thanks .gap{gap:clamp(.5rem,1.4vmin,.9rem);display:flex;flex-direction:column;align-items:center;}
+
+/* ---------- Footer ---------- */
+
+.foot{
+  flex:0 0 auto;
+  padding:clamp(.8rem,2.4vmin,1.6rem);
+  text-align:center;
+  font-size:clamp(.62rem,1.4vmin,.8rem);
+  color:var(--muted);
+  opacity:.65;
+}
+
+/* ---------- Hidden panel ---------- */
+
+.peek{
+  position:fixed;
+  inset:0;
+  background:rgba(27,31,34,.55);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:1.25rem;
+  z-index:10;
+}
+.peek[data-open="1"]{display:flex;}
+.peek .box{
+  background:var(--paper);
+  border-radius:12px;
+  padding:1.5rem;
+  width:min(340px,100%);
+  box-shadow:0 20px 50px -20px rgba(0,0,0,.5);
+}
+.peek h3{
+  margin:0 0 .3rem;
+  font-size:1rem;
+  font-weight:600;
+}
+.peek .sub{
+  margin:0 0 1.1rem;
+  font-size:.8rem;
+  color:var(--muted);
+}
+.peek .row{
+  display:flex;
+  align-items:center;
+  gap:.7rem;
+  padding:.45rem 0;
+  border-bottom:1px solid var(--line);
+  font-size:.85rem;
+  font-variant-numeric:tabular-nums;
+}
+.peek .row:last-of-type{border-bottom:0;}
+.peek .row .dot{width:.6rem;height:.6rem;border-radius:50%;flex:0 0 auto;}
+.peek .row .n{margin-left:auto;font-weight:600;}
+.peek .tot{
+  display:flex;
+  margin-top:.8rem;
+  padding-top:.7rem;
+  border-top:1.5px solid var(--ink);
+  font-size:.9rem;
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+}
+.peek .tot span:last-child{margin-left:auto;}
+.peek .status{
+  display:flex;
+  align-items:center;
+  gap:.5rem;
+  margin-top:1rem;
+  padding:.6rem .7rem;
+  border-radius:7px;
+  background:var(--ground);
+  font-size:.78rem;
+  font-weight:500;
+  color:var(--muted);
+}
+.peek .status .led{
+  width:.5rem;height:.5rem;border-radius:50%;flex:0 0 auto;
+  background:var(--muted);
+}
+.peek .status[data-s="av"]  .led{background:var(--muted);}
+.peek .status[data-s="ok"]  .led{background:var(--c5);}
+.peek .status[data-s="ko"]  .led{background:var(--c2);}
+.peek .status[data-s="fel"] .led{background:var(--c1);}
+.peek .lank{
+  display:block;width:100%;
+  margin-top:1rem;
+  padding:.6rem;
+  border:1px solid var(--line);border-radius:7px;
+  background:var(--paper);color:var(--ink);
+  font-family:inherit;font-size:.8rem;font-weight:600;
+  text-align:center;text-decoration:none;
+}
+.peek .lank:hover{border-color:var(--ink);}
+.peek .btns{display:flex;gap:.5rem;margin-top:.5rem;}
+.peek button{
+  flex:1;
+  font-family:inherit;
+  font-size:.8rem;
+  font-weight:600;
+  padding:.6rem;
+  border-radius:7px;
+  border:1px solid var(--line);
+  background:var(--paper);
+  color:var(--ink);
+  cursor:pointer;
+}
+.peek button.primary{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+.peek button:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
+
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important;}
+  .tick path{stroke-dashoffset:0;}
+}
+</style>
+</head>
+<body>
+
+<div class="kiosk">
+
+  <div class="brand" id="brand">
+    <div class="mark">RKJH</div>
+    <div class="name">Revisionskonsulterna J Hägglund</div>
+  </div>
+
+  <div class="stage">
+
+    <!-- Fråga -->
+    <div class="view is-on" id="ask">
+      <h1>Hur var ditt besök idag?</h1>
+      <div class="scale" id="scale" role="group" aria-label="Betygsätt ditt besök"></div>
+      <p class="hint">Tryck på en symbol</p>
+    </div>
+
+    <!-- Tack -->
+    <div class="view" id="thanks" aria-live="polite">
+      <svg class="tick" viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="48"></circle>
+        <path d="M30,52 L44,66 L71,37"></path>
+      </svg>
+      <div class="gap">
+        <h2>Tack!</h2>
+        <p>Ditt svar är registrerat.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="foot">Svaren är anonyma</div>
+</div>
+
+<div class="peek" id="peek" role="dialog" aria-label="Statistik" aria-modal="true">
+  <div class="box">
+    <h3>Registrerade svar</h3>
+    <p class="sub">Endast synlig för er — kunden ser aldrig den här rutan.</p>
+    <div id="peekRows"></div>
+    <div class="tot"><span>Totalt</span><span id="peekTotal">0</span></div>
+    <div class="status" id="peekStatus" data-s="av">
+      <span class="led"></span><span id="peekStatusText">Databas: inte inkopplad</span>
+    </div>
+    <a class="lank" href="dashboard.html" target="_blank" rel="noopener">Öppna översikten →</a>
+    <div class="btns">
+      <button type="button" id="peekClear">Rensa</button>
+      <button type="button" class="primary" id="peekClose">Stäng</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* =======================================================
+     INSTÄLLNINGAR — det enda som ska ändras i den här filen
+     =======================================================
+
+     1. Skapa ett gratiskonto på supabase.com och ett projekt
+     2. SQL Editor → klistra in schema.sql → Run
+     3. Project Settings → API Keys → kopiera hit:
+
+     Lämnas de tomma fungerar skärmen ändå — svaren sparas
+     då bara lokalt i plattan.                                */
+
+  var DB = {
+    url:   "https://zersylbcdxfqgtmzvlaf.supabase.co",
+    nyckel:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InplcnN5bGJjZHhmcWd0bXp2bGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5OTYwNjUsImV4cCI6MjEwMjU3MjA2NX0.bURzmunUDxaHoq750S8BTb_Nz1_9Lxzg3Rtlwnd5KZ8",
+    enhet: "entre"       // namn på den här skärmen
+  };
+
+  /* ===================================================== */
+
+  var LAGER   = "rkjh.feedback.v1";
+  var TACK_MS = 3000;
+  var TAK     = 500;     // så lagret inte växer i all oändlighet
+  var status  = { lage:"av", text:"Databas: inte inkopplad" };
+
+  var STEG = [
+    { v:1, txt:"Mycket dåligt", c:"--c1", t:"--t1", mun:"M30,72 Q50,52 70,72" },
+    { v:2, txt:"Dåligt",        c:"--c2", t:"--t2", mun:"M30,69 Q50,58 70,69" },
+    { v:3, txt:"Okej",          c:"--c3", t:"--t3", mun:"M31,64 L69,64"       },
+    { v:4, txt:"Bra",           c:"--c4", t:"--t4", mun:"M30,60 Q50,71 70,60" },
+    { v:5, txt:"Mycket bra",    c:"--c5", t:"--t5", mun:"M30,57 Q50,78 70,57" }
+  ];
+
+  var ask    = document.getElementById("ask");
+  var thanks = document.getElementById("thanks");
+  var scale  = document.getElementById("scale");
+  var laser  = false;   // spärr så ett tryck inte kan registreras två gånger
+  var timer  = null;
+
+  /* ---- Bygg de fem ansiktena ---- */
+
+  STEG.forEach(function(s){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "face";
+    b.setAttribute("aria-label", s.txt);
+    b.innerHTML =
+      '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+        '<circle cx="50" cy="50" r="45" fill="var(' + s.t + ')" ' +
+                'stroke="var(' + s.c + ')" stroke-width="4"/>' +
+        '<circle cx="35" cy="40" r="5.2" fill="var(' + s.c + ')"/>' +
+        '<circle cx="65" cy="40" r="5.2" fill="var(' + s.c + ')"/>' +
+        '<path d="' + s.mun + '" fill="none" stroke="var(' + s.c + ')" ' +
+              'stroke-width="5.5" stroke-linecap="round"/>' +
+      '</svg>' +
+      '<span class="label">' + s.txt + '</span>';
+    b.addEventListener("click", function(){ svara(s.v); });
+    scale.appendChild(b);
+  });
+
+  /* ---- Ett svar ---- */
+
+  function svara(betyg){
+    if (laser) return;
+    laser = true;
+
+    spara(betyg);
+
+    ask.classList.remove("is-on");
+    thanks.classList.add("is-on");
+
+    clearTimeout(timer);
+    timer = setTimeout(aterstall, TACK_MS);
+  }
+
+  function aterstall(){
+    thanks.classList.remove("is-on");
+    ask.classList.add("is-on");
+    laser = false;
+  }
+
+  /* -------------------------------------------------------
+     Lagring
+
+     Varje svar skrivs ALLTID ner lokalt först, direkt, innan
+     något nät är inblandat. Sen försöker vi skicka. Lyckas
+     det inte ligger raden kvar i kön och går iväg nästa gång
+     nätet är uppe — inget svar kan försvinna för att wifit
+     hackar mitt i en kö.
+     ------------------------------------------------------- */
+
+  function spara(betyg){
+    var alla = las();
+
+    alla.push({
+      id:      Date.now() + "-" + Math.random().toString(36).slice(2, 8),
+      betyg:   betyg,
+      tid:     new Date().toISOString(),
+      enhet:   DB.enhet,
+      skickad: false
+    });
+
+    skriv(stada(alla));
+    skicka();
+  }
+
+  /* Håller lagret under taket — men kastar bara rader som redan
+     är skickade. Något som ligger kvar i kön får aldrig gallras
+     bort, hur länge nätet än har varit nere.                    */
+
+  function stada(alla){
+    if (alla.length <= TAK) return alla;
+
+    var overskott = alla.length - TAK;
+    var kvar = [];
+
+    for (var i = 0; i < alla.length; i++){
+      if (overskott > 0 && alla[i].skickad){ overskott--; continue; }
+      kvar.push(alla[i]);
+    }
+    return kvar;
+  }
+
+  /* Minnet är sanningen under pågående session; lagret är ett
+     bästa-försök för att överleva omstart. Kastar setItem (fullt
+     lager, privat läge) tappas alltså ingen knapptryckning — bara
+     uthålligheten över en omstart.                                 */
+
+  var minne = null;
+
+  function las(){
+    if (minne !== null) return minne;
+    try { minne = JSON.parse(localStorage.getItem(LAGER) || "[]"); }
+    catch(e){ minne = []; }
+    return minne;
+  }
+
+  function skriv(alla){
+    minne = alla;
+    try { localStorage.setItem(LAGER, JSON.stringify(alla)); } catch(e){}
+  }
+
+  /* -------------------------------------------------------
+     Skicka kön till databasen
+     ------------------------------------------------------- */
+
+  var skickar = false;
+
+  function skicka(){
+    if (skickar) return;
+    if (!DB.url || !DB.nyckel){
+      satt("av", "Databas: inte inkopplad");
+      return;
+    }
+
+    var alla = las();
+    var ko   = alla.filter(function(r){ return !r.skickad; });
+
+    if (!ko.length){
+      satt("ok", "Databas: allt skickat");
+      return;
+    }
+
+    if (!navigator.onLine){
+      satt("ko", "Nätet nere — " + ko.length + " i kö");
+      return;
+    }
+
+    skickar = true;
+
+    fetch(DB.url.replace(/\/+$/, "") + "/rest/v1/svar", {
+      method: "POST",
+      headers: {
+        "apikey":        DB.nyckel,
+        "Authorization": "Bearer " + DB.nyckel,
+        "Content-Type":  "application/json",
+        "Prefer":        "return=minimal"
+      },
+      body: JSON.stringify(ko.map(function(r){
+        return { betyg:r.betyg, tid:r.tid, enhet:r.enhet };
+      }))
+    })
+    .then(function(svar){
+      if (!svar.ok) throw new Error("HTTP " + svar.status);
+
+      // Bocka av exakt de rader som följde med anropet. Trycker
+      // någon på en knapp medan det pågår får den raden ligga
+      // kvar i kön i stället för att bockas av oskickad.
+      var klara = {};
+      ko.forEach(function(r){ klara[r.id] = true; });
+
+      var nu = las();
+      nu.forEach(function(r){ if (klara[r.id]) r.skickad = true; });
+      skriv(nu);
+
+      satt("ok", "Databas: allt skickat");
+    })
+    .catch(function(fel){
+      satt("fel", "Kunde inte skicka — " + ko.length + " i kö");
+      if (window.console) console.warn("[feedback]", fel.message);
+    })
+    .then(function(){ skickar = false; });
+  }
+
+  function satt(lage, text){
+    status.lage = lage;
+    status.text = text;
+  }
+
+  /* Nya försök: vid start, när nätet kommer tillbaka, var 30:e sekund */
+
+  skicka();
+  window.addEventListener("online", skicka);
+  setInterval(skicka, 30000);
+
+  /* ---- Dold panel: 5 tryck på loggan, eller S ---- */
+
+  var peek      = document.getElementById("peek");
+  var peekRows  = document.getElementById("peekRows");
+  var peekTotal = document.getElementById("peekTotal");
+  var tryck = 0, tryckTimer = null;
+
+  document.getElementById("brand").addEventListener("click", function(){
+    tryck++;
+    clearTimeout(tryckTimer);
+    tryckTimer = setTimeout(function(){ tryck = 0; }, 1500);
+    if (tryck >= 5){ tryck = 0; oppnaPeek(); }
+  });
+
+  document.addEventListener("keydown", function(e){
+    if (e.key === "s" || e.key === "S") oppnaPeek();
+    if (e.key === "Escape") stangPeek();
+    if (e.key >= "1" && e.key <= "5") svara(Number(e.key));
+  });
+
+  function oppnaPeek(){
+    var alla = las();
+    var n = [0,0,0,0,0];
+    alla.forEach(function(r){ if (r.betyg >= 1 && r.betyg <= 5) n[r.betyg-1]++; });
+
+    peekRows.innerHTML = "";
+    STEG.forEach(function(s, i){
+      var d = document.createElement("div");
+      d.className = "row";
+      d.innerHTML =
+        '<span class="dot" style="background:var(' + s.c + ')"></span>' +
+        '<span>' + s.txt + '</span>' +
+        '<span class="n">' + n[i] + '</span>';
+      peekRows.appendChild(d);
+    });
+
+    peekTotal.textContent = alla.length;
+
+    var ko = alla.filter(function(r){ return !r.skickad; }).length;
+    if (DB.url && DB.nyckel && ko && status.lage === "ok") satt("ko", ko + " i kö");
+
+    var box = document.getElementById("peekStatus");
+    box.setAttribute("data-s", status.lage);
+    document.getElementById("peekStatusText").textContent = status.text;
+
+    peek.setAttribute("data-open", "1");
+  }
+
+  function stangPeek(){ peek.removeAttribute("data-open"); }
+
+  document.getElementById("peekClose").addEventListener("click", stangPeek);
+  document.getElementById("peekClear").addEventListener("click", function(){
+    minne = [];
+    try { localStorage.removeItem(LAGER); } catch(e){}
+    oppnaPeek();
+  });
+  peek.addEventListener("click", function(e){ if (e.target === peek) stangPeek(); });
+
+  /* ---- Eventläge ----
+
+     Skärmen frågar databasen varannan minut om ett event pågår.
+     Gör det det byter den själv till eventskärmen; den byter
+     tillbaka hit av sig själv när eventet är slut. Ingen rör
+     plattan. Når vi inte nätet händer ingenting — vanliga
+     skärmen är alltid det säkra läget.                          */
+
+  function kollaEvent(){
+    if (!DB.url || !DB.nyckel) return;
+    fetch(DB.url + "/rest/v1/rpc/aktivt_event", {
+      method: "POST",
+      headers: {
+        "apikey":        DB.nyckel,
+        "Authorization": "Bearer " + DB.nyckel,
+        "Content-Type":  "application/json"
+      },
+      body: "{}"
+    }).then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(e){
+        if (e && e.id) location.replace("event-skarmar.html?auto=1");
+      })
+      .catch(function(){});
+  }
+
+  kollaEvent();
+  setInterval(kollaEvent, 2 * 60 * 1000);
+
+  /* ---- Kioskhygien ---- */
+
+  document.addEventListener("contextmenu", function(e){ e.preventDefault(); });
+  document.addEventListener("dblclick", function(e){ e.preventDefault(); });
+
+})();
+</script>
+</body>
+</html>
