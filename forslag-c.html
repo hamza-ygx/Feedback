@@ -17,7 +17,9 @@
    block per svar. Inga symboler att tolka, störst tryckytor,
    högst kontrast.
 
-   Skriver inte till databasen: det här är ett designförslag.
+   Öppnad som vanligt är det ett designförslag som inte skriver
+   till databasen. Med ?skarp=1 (så öppnar plattan den när
+   skärmen är vald i översikten) är den skarp via kiosk.js.
    ========================================================= */
 
 *{box-sizing:border-box;}
@@ -192,6 +194,7 @@ h1{
   <p class="anonym">Svaren är anonyma</p>
 </div>
 
+<script src="kiosk.js"></script>
 <script>
 (function(){
   "use strict";
@@ -212,7 +215,7 @@ h1{
       }
       kub += '</span>';
       b.innerHTML = kub + '<span class="ord">' + ORD[m] + '</span>';
-      b.onclick = svara;
+      b.onclick = function(){ svara(m + 1); };
       rad.appendChild(b);
     })(m);
   }
@@ -228,15 +231,18 @@ h1{
     }
   }
 
-  function svara(){
+  function svara(betyg){
     if (last) return;
     last = true;
+    Kiosk.svara(betyg);
     byt("tack");
     clearTimeout(timer);
     timer = setTimeout(function(){ byt("fraga"); last = false; }, TACK_MS);
   }
 
   document.oncontextmenu = function(e){ e.preventDefault(); };
+
+  if (/[?&]skarp=1/.test(location.search)) Kiosk.start({ skarm:"c" });
 })();
 </script>
 </body>

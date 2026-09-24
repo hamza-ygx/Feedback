@@ -17,7 +17,9 @@
    byråns röda — antalet stjärnor bär betyget, färgen bär
    avsändaren.
 
-   Skriver inte till databasen: det här är ett designförslag.
+   Öppnad som vanligt är det ett designförslag som inte skriver
+   till databasen. Med ?skarp=1 (så öppnar plattan den när
+   skärmen är vald i översikten) är den skarp via kiosk.js.
    ========================================================= */
 
 *{box-sizing:border-box;}
@@ -163,6 +165,7 @@ h1{
   <p class="anonym">Svaren är anonyma</p>
 </div>
 
+<script src="kiosk.js"></script>
 <script>
 (function(){
   "use strict";
@@ -202,6 +205,7 @@ h1{
         if (vald) return;
         vald = true;
         tand(j);
+        Kiosk.svara(j + 1);
         setTimeout(svara, BEKRAFTA_MS);
       };
       rad.appendChild(b);
@@ -236,6 +240,8 @@ h1{
   }
 
   document.oncontextmenu = function(e){ e.preventDefault(); };
+
+  if (/[?&]skarp=1/.test(location.search)) Kiosk.start({ skarm:"b" });
 })();
 </script>
 </body>

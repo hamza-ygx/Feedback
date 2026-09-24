@@ -5,12 +5,13 @@ ansikten, ett tryck, klart — plus översikten där man ser vad folk faktiskt s
 
 | Steg | Vad | Fil | Status |
 |---|---|---|---|
-| 1 | Skärmen kunden trycker på | `index.html` | ✅ live |
-| 2 | Databasen svaren hamnar i | `schema.sql` | ✅ live (Supabase, EU) |
+| 1 | Skärmen kunden trycker på | `index.html` (+ `forslag-a/b/c.html`) | ✅ live |
+| 2 | Databasen svaren hamnar i | `schema.sql` | ✅ live (Supabase, Frankfurt) |
 | 3 | Översikten byrån tittar på | `dashboard.html` | ✅ live |
 
-Allt är fristående HTML utan beroenden. Databasen är Postgres hos Supabase,
-projektet **Feedback-dash**, redan uppkopplat i båda filerna.
+Allt är fristående HTML utan beroenden; gemensam skärmlogik ligger i
+`kiosk.js`. Databasen är Postgres hos Supabase, projektet
+**supabase-rose-lamp** (`yykoaoildtqyclpregug`), uppkopplat i sidornas `DB`-block.
 
 ## Öppna översikten
 
@@ -26,20 +27,31 @@ Man behöver inte minnas adressen: **fem tryck på loggan** på skärmen
 
 Ange sedan åtkomstkoden.
 
-> **Åtkomstkod (demo): `RKJH-7293`**
->
-> Koden lagras hashad i databasen — byt den innan något går till en riktig
-> kund (en rad SQL, står i `schema.sql`). Att den står här är okej för en
-> demo i ett privat repo, inte för drift.
+> **Åtkomstkoden står inte här — repot är publikt.** Den lagras bara som
+> bcrypt-hash i databasen. Byt den med en rad SQL (avsnitt 2 i `schema.sql`).
 
 Knappen **Visa med exempeldata** öppnar översikten utan databas — bra när
 man vill visa utseendet utan nät.
+
+## Styra skärmen från översikten
+
+Fliken **Skärm & event** i översikten (`/dashboard.html#styrning`):
+
+- **Skärmen i entrén** — välj Original, Förslag A, B eller C. Plattan
+  byter själv inom 15 sekunder. Förslagsfilerna är bara skarpa när
+  plattan öppnar dem (`?skarp=1`); öppnade direkt skriver de inget.
+- **Live-event** — starta ett event direkt eller schemalägg det, byt
+  mellan Betyg / Välkommen / Omröstning medan det pågår, förläng,
+  redigera agenda och alternativ, avsluta. Plattan följer inom 15 s
+  och går tillbaka till vald skärm när eventet är slut.
+- **Event** — kommande och tidigare event med resultat (betyg, röster).
 
 ## Så hänger det ihop
 
 ```
 [ Platta i entrén ]        [ Supabase Postgres ]        [ Översikten ]
    index.html      ──────►    tabellen svar      ◄──────  dashboard.html
+   forslag-a/b/c   ◄──────    skarm_lage()       ◄──────  styr skärm + event
    ett tryck = en rad         RLS: insert-only            läser via funktion
    kö vid nätstrul            koden hashad (bcrypt)       som kräver åtkomstkod
 ```
@@ -49,8 +61,10 @@ nere köas raderna och går iväg vid nästa försök — vid start, när nätet
 kommer tillbaka, var trettionde sekund. Ett wifi som hackar kostar inga svar.
 
 **Nyckeln i sidorna är publik med flit.** Databasen tillåter den exakt en
-sak: lägga till ett svar. Läsa, ändra, radera — stängt. Verifierat med
-riktiga anrop: insert ger 201, select/update ger 401, fel kod ger 403.
+sak utan kod: lägga till ett svar (och fråga vilken skärm som ska visas).
+Läsa, ändra, radera — stängt, eller bakom åtkomstkoden. Verifierat mot
+databasen som `anon`: tabellerna ger permission denied, fel kod ger 28000
+(HTTP 403).
 
 **Översikten** läser aldrig tabellen direkt — den anropar funktionen
 `hamta_statistik(kod, dagar)`, som verifierar koden mot bcrypt-hashen och
@@ -62,14 +76,13 @@ bara lämnar ut färdiga siffror: per dag, per timme, fördelning, totaler.
 om databasen svarar. Kunden ser den aldrig. Tangenterna `1`–`5` fungerar
 som ansiktena när man testar.
 
-## Demodata
+## Nollställa
 
-Databasen innehåller ca 630 genererade svar, 60 dagar bakåt: vardagar,
-kontorstid, mest nöjda — och en tydlig svacka för ca 10 dagar sedan som
-återhämtat sig. Bra att peka på i en demo. Rensa allt med:
+Databasen startade tom. Rensa svar, event och skärmval (koden behålls):
 
 ```sql
-delete from svar where tid < current_date;
+truncate svar, event restart identity;
+update installningar set skarm = 'standard' where id = 1;
 ```
 
 ## Lägga upp det på riktigt
@@ -81,7 +94,8 @@ delete from svar where tid < current_date;
    iPad → Guidad åtkomst · Android → Fästa appar / kiosk-app.
 3. **Hos en riktig kund** — skapa nytt Supabase-projekt i kundens namn
    (region Frankfurt för EU-data), kör `schema.sql`, byt URL + nyckel i
-   filernas `DB`-block, sätt en ny åtkomstkod, rensa demodata.
+   `DB`-blocken (`kiosk.js`, `dashboard.html`, `event-skarmar.html`,
+   `oversikt-period.html`) och sätt en åtkomstkod.
 
 ## Kostnad
 

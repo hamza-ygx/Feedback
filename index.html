@@ -377,33 +377,15 @@ h1{
   </div>
 </div>
 
+<script src="kiosk.js"></script>
 <script>
 (function(){
   "use strict";
 
-  /* =======================================================
-     INSTÄLLNINGAR — det enda som ska ändras i den här filen
-     =======================================================
+  /* Databas, kö, skärmval och eventläge sköts av kiosk.js.
+     Här finns bara den här skärmens design.                 */
 
-     1. Skapa ett gratiskonto på supabase.com och ett projekt
-     2. SQL Editor → klistra in schema.sql → Run
-     3. Project Settings → API Keys → kopiera hit:
-
-     Lämnas de tomma fungerar skärmen ändå — svaren sparas
-     då bara lokalt i plattan.                                */
-
-  var DB = {
-    url:   "https://zersylbcdxfqgtmzvlaf.supabase.co",
-    nyckel:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InplcnN5bGJjZHhmcWd0bXp2bGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5OTYwNjUsImV4cCI6MjEwMjU3MjA2NX0.bURzmunUDxaHoq750S8BTb_Nz1_9Lxzg3Rtlwnd5KZ8",
-    enhet: "entre"       // namn på den här skärmen
-  };
-
-  /* ===================================================== */
-
-  var LAGER   = "rkjh.feedback.v1";
   var TACK_MS = 3000;
-  var TAK     = 500;     // så lagret inte växer i all oändlighet
-  var status  = { lage:"av", text:"Databas: inte inkopplad" };
 
   var STEG = [
     { v:1, txt:"Mycket dåligt", c:"--c1", t:"--t1", mun:"M30,72 Q50,52 70,72" },
@@ -446,7 +428,7 @@ h1{
     if (laser) return;
     laser = true;
 
-    spara(betyg);
+    Kiosk.svara(betyg);
 
     ask.classList.remove("is-on");
     thanks.classList.add("is-on");
@@ -461,139 +443,8 @@ h1{
     laser = false;
   }
 
-  /* -------------------------------------------------------
-     Lagring
-
-     Varje svar skrivs ALLTID ner lokalt först, direkt, innan
-     något nät är inblandat. Sen försöker vi skicka. Lyckas
-     det inte ligger raden kvar i kön och går iväg nästa gång
-     nätet är uppe — inget svar kan försvinna för att wifit
-     hackar mitt i en kö.
-     ------------------------------------------------------- */
-
-  function spara(betyg){
-    var alla = las();
-
-    alla.push({
-      id:      Date.now() + "-" + Math.random().toString(36).slice(2, 8),
-      betyg:   betyg,
-      tid:     new Date().toISOString(),
-      enhet:   DB.enhet,
-      skickad: false
-    });
-
-    skriv(stada(alla));
-    skicka();
-  }
-
-  /* Håller lagret under taket — men kastar bara rader som redan
-     är skickade. Något som ligger kvar i kön får aldrig gallras
-     bort, hur länge nätet än har varit nere.                    */
-
-  function stada(alla){
-    if (alla.length <= TAK) return alla;
-
-    var overskott = alla.length - TAK;
-    var kvar = [];
-
-    for (var i = 0; i < alla.length; i++){
-      if (overskott > 0 && alla[i].skickad){ overskott--; continue; }
-      kvar.push(alla[i]);
-    }
-    return kvar;
-  }
-
-  /* Minnet är sanningen under pågående session; lagret är ett
-     bästa-försök för att överleva omstart. Kastar setItem (fullt
-     lager, privat läge) tappas alltså ingen knapptryckning — bara
-     uthålligheten över en omstart.                                 */
-
-  var minne = null;
-
-  function las(){
-    if (minne !== null) return minne;
-    try { minne = JSON.parse(localStorage.getItem(LAGER) || "[]"); }
-    catch(e){ minne = []; }
-    return minne;
-  }
-
-  function skriv(alla){
-    minne = alla;
-    try { localStorage.setItem(LAGER, JSON.stringify(alla)); } catch(e){}
-  }
-
-  /* -------------------------------------------------------
-     Skicka kön till databasen
-     ------------------------------------------------------- */
-
-  var skickar = false;
-
-  function skicka(){
-    if (skickar) return;
-    if (!DB.url || !DB.nyckel){
-      satt("av", "Databas: inte inkopplad");
-      return;
-    }
-
-    var alla = las();
-    var ko   = alla.filter(function(r){ return !r.skickad; });
-
-    if (!ko.length){
-      satt("ok", "Databas: allt skickat");
-      return;
-    }
-
-    if (!navigator.onLine){
-      satt("ko", "Nätet nere — " + ko.length + " i kö");
-      return;
-    }
-
-    skickar = true;
-
-    fetch(DB.url.replace(/\/+$/, "") + "/rest/v1/svar", {
-      method: "POST",
-      headers: {
-        "apikey":        DB.nyckel,
-        "Authorization": "Bearer " + DB.nyckel,
-        "Content-Type":  "application/json",
-        "Prefer":        "return=minimal"
-      },
-      body: JSON.stringify(ko.map(function(r){
-        return { betyg:r.betyg, tid:r.tid, enhet:r.enhet };
-      }))
-    })
-    .then(function(svar){
-      if (!svar.ok) throw new Error("HTTP " + svar.status);
-
-      // Bocka av exakt de rader som följde med anropet. Trycker
-      // någon på en knapp medan det pågår får den raden ligga
-      // kvar i kön i stället för att bockas av oskickad.
-      var klara = {};
-      ko.forEach(function(r){ klara[r.id] = true; });
-
-      var nu = las();
-      nu.forEach(function(r){ if (klara[r.id]) r.skickad = true; });
-      skriv(nu);
-
-      satt("ok", "Databas: allt skickat");
-    })
-    .catch(function(fel){
-      satt("fel", "Kunde inte skicka — " + ko.length + " i kö");
-      if (window.console) console.warn("[feedback]", fel.message);
-    })
-    .then(function(){ skickar = false; });
-  }
-
-  function satt(lage, text){
-    status.lage = lage;
-    status.text = text;
-  }
-
-  /* Nya försök: vid start, när nätet kommer tillbaka, var 30:e sekund */
-
-  skicka();
-  window.addEventListener("online", skicka);
-  setInterval(skicka, 30000);
+  /* ?prov=1 = förhandsvisning i översikten: inga svar sparas, inga byten */
+  if (!/[?&]prov=1/.test(location.search)) Kiosk.start({ skarm:"standard" });
 
   /* ---- Dold panel: 5 tryck på loggan, eller S ---- */
 
@@ -616,7 +467,7 @@ h1{
   });
 
   function oppnaPeek(){
-    var alla = las();
+    var alla = Kiosk.las();
     var n = [0,0,0,0,0];
     alla.forEach(function(r){ if (r.betyg >= 1 && r.betyg <= 5) n[r.betyg-1]++; });
 
@@ -633,8 +484,9 @@ h1{
 
     peekTotal.textContent = alla.length;
 
+    var status = Kiosk.status();
     var ko = alla.filter(function(r){ return !r.skickad; }).length;
-    if (DB.url && DB.nyckel && ko && status.lage === "ok") satt("ko", ko + " i kö");
+    if (Kiosk.kopplad() && ko && status.lage === "ok") Kiosk.satt("ko", ko + " i kö");
 
     var box = document.getElementById("peekStatus");
     box.setAttribute("data-s", status.lage);
@@ -647,44 +499,10 @@ h1{
 
   document.getElementById("peekClose").addEventListener("click", stangPeek);
   document.getElementById("peekClear").addEventListener("click", function(){
-    minne = [];
-    try { localStorage.removeItem(LAGER); } catch(e){}
+    Kiosk.rensa();
     oppnaPeek();
   });
   peek.addEventListener("click", function(e){ if (e.target === peek) stangPeek(); });
-
-  /* ---- Eventläge ----
-
-     Skärmen frågar databasen varannan minut om ett event pågår.
-     Gör det det byter den själv till eventskärmen; den byter
-     tillbaka hit av sig själv när eventet är slut. Ingen rör
-     plattan. Når vi inte nätet händer ingenting — vanliga
-     skärmen är alltid det säkra läget.                          */
-
-  function kollaEvent(){
-    if (!DB.url || !DB.nyckel) return;
-    fetch(DB.url + "/rest/v1/rpc/aktivt_event", {
-      method: "POST",
-      headers: {
-        "apikey":        DB.nyckel,
-        "Authorization": "Bearer " + DB.nyckel,
-        "Content-Type":  "application/json"
-      },
-      body: "{}"
-    }).then(function(r){ return r.ok ? r.json() : null; })
-      .then(function(e){
-        if (e && e.id) location.replace("event-skarmar.html?auto=1");
-      })
-      .catch(function(){});
-  }
-
-  kollaEvent();
-  setInterval(kollaEvent, 2 * 60 * 1000);
-
-  /* ---- Kioskhygien ---- */
-
-  document.addEventListener("contextmenu", function(e){ e.preventDefault(); });
-  document.addEventListener("dblclick", function(e){ e.preventDefault(); });
 
 })();
 </script>
