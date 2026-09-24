@@ -88,29 +88,48 @@ insert into installningar (id, kod_hash)
 values (1, extensions.crypt(gen_random_uuid()::text, extensions.gen_salt('bf')))
 on conflict (id) do nothing;   -- skriver inte över en redan satt kod
 
-create or replace function hamta_statistik(kod text, dagar int default 30)
-returns jsonb
+-- Kodkontroll, delad av alla skrivande funktioner. Inte
+-- anropbar utifrån — bara från funktionerna nedan.
+create or replace function public.krav_kod(kod text)
+returns void
 language plpgsql
 security definer
 set search_path = ''
 as $$
 declare
   ratt text;
-  fran date;
 begin
   select kod_hash into ratt from public.installningar where id = 1;
-
-  -- "is distinct from" i stället för <>: annars blir jämförelsen NULL
-  -- (inte TRUE) när kod är null, och vakten utlöses aldrig. Hittat i
-  -- stresstest — {"kod": null} gav full statistik.
   if kod is null or ratt is null
      or extensions.crypt(kod, ratt) is distinct from ratt then
-    perform pg_sleep(0.4);           -- bromsar gissningar
+    perform pg_sleep(0.4);
     raise exception 'fel åtkomstkod' using errcode = '28000';
   end if;
+end;
+$$;
+
+revoke all on function public.krav_kod(text) from public, anon, authenticated;
+
+
+-- Statistik för de senaste N dagarna, räknat i svensk tid.
+-- (Översikten använder hamta_period i avsnitt 6; den här
+-- används av oversikt-period.html.)
+create or replace function public.hamta_statistik(kod text, dagar int default 30)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  tz   constant text := 'Europe/Stockholm';
+  idag date;
+  fran timestamptz;
+begin
+  perform public.krav_kod(kod);
 
   dagar := least(greatest(coalesce(dagar, 30), 1), 365);
-  fran  := current_date - dagar + 1;
+  idag  := (now() at time zone tz)::date;
+  fran  := (idag - dagar + 1)::timestamp at time zone tz;
 
   return jsonb_build_object(
     'genererad', now(),
@@ -119,73 +138,70 @@ begin
     'totalt', (
       select jsonb_build_object(
         'antal',     count(*),
-        'snitt',     round(avg(betyg)::numeric, 2),
-        'nojda',     count(*) filter (where betyg >= 4),
-        'missnojda', count(*) filter (where betyg <= 2),
-        'idag',      count(*) filter (where tid::date = current_date)
+        'snitt',     round(avg(s.betyg)::numeric, 2),
+        'nojda',     count(*) filter (where s.betyg >= 4),
+        'missnojda', count(*) filter (where s.betyg <= 2),
+        'idag',      count(*) filter (where (s.tid at time zone tz)::date = idag)
       )
-      from public.svar where tid::date >= fran
-        and enhet not like 'event:%' and enhet not like 'val:%'
+      from public.svar s where s.tid >= fran
+        and s.enhet not like 'event:%' and s.enhet not like 'val:%'
     ),
 
     'per_dag', (
       select coalesce(jsonb_agg(jsonb_build_object(
-        'dag',       dag,
-        'antal',     antal,
-        'snitt',     snitt,
-        'nojda',     nojda,
-        'missnojda', missnojda
-      ) order by dag), '[]'::jsonb)
+        'dag', d.dag, 'antal', d.antal, 'snitt', d.snitt,
+        'nojda', d.nojda, 'missnojda', d.missnojda
+      ) order by d.dag), '[]'::jsonb)
       from (
-        select tid::date as dag,
+        select (s.tid at time zone tz)::date as dag,
                count(*) as antal,
-               round(avg(betyg)::numeric, 2) as snitt,
-               count(*) filter (where betyg >= 4) as nojda,
-               count(*) filter (where betyg <= 2) as missnojda
-        from public.svar
-        where tid::date >= fran
-        and enhet not like 'event:%' and enhet not like 'val:%'
+               round(avg(s.betyg)::numeric, 2) as snitt,
+               count(*) filter (where s.betyg >= 4) as nojda,
+               count(*) filter (where s.betyg <= 2) as missnojda
+        from public.svar s
+        where s.tid >= fran
+          and s.enhet not like 'event:%' and s.enhet not like 'val:%'
         group by 1
       ) d
     ),
 
     'fordelning', (
-      select coalesce(jsonb_object_agg(betyg, antal), '{}'::jsonb)
+      select coalesce(jsonb_object_agg(f.betyg, f.antal), '{}'::jsonb)
       from (
-        select betyg, count(*) as antal
-        from public.svar
-        where tid::date >= fran
-        and enhet not like 'event:%' and enhet not like 'val:%'
-        group by betyg
+        select s.betyg, count(*) as antal
+        from public.svar s
+        where s.tid >= fran
+          and s.enhet not like 'event:%' and s.enhet not like 'val:%'
+        group by s.betyg
       ) f
     ),
 
     'per_timme', (
       select coalesce(jsonb_agg(jsonb_build_object(
-        'timme', timme, 'antal', antal, 'snitt', snitt
-      ) order by timme), '[]'::jsonb)
+        'timme', h.timme, 'antal', h.antal, 'snitt', h.snitt
+      ) order by h.timme), '[]'::jsonb)
       from (
-        select extract(hour from tid)::int as timme,
+        select extract(hour from s.tid at time zone tz)::int as timme,
                count(*) as antal,
-               round(avg(betyg)::numeric, 2) as snitt
-        from public.svar
-        where tid::date >= fran
-        and enhet not like 'event:%' and enhet not like 'val:%'
+               round(avg(s.betyg)::numeric, 2) as snitt
+        from public.svar s
+        where s.tid >= fran
+          and s.enhet not like 'event:%' and s.enhet not like 'val:%'
         group by 1
       ) h
     ),
 
     'per_enhet', (
       select coalesce(jsonb_agg(jsonb_build_object(
-        'enhet', enhet, 'antal', antal, 'snitt', snitt
-      ) order by antal desc), '[]'::jsonb)
+        'enhet', e.enhet, 'antal', e.antal, 'snitt', e.snitt
+      ) order by e.antal desc), '[]'::jsonb)
       from (
-        select enhet, count(*) as antal,
-               round(avg(betyg)::numeric, 2) as snitt
-        from public.svar
-        where tid::date >= fran
-        and enhet not like 'event:%' and enhet not like 'val:%'
-        group by enhet
+        select s.enhet, count(*) as antal,
+               round(avg(s.betyg)::numeric, 2) as snitt
+        from public.svar s
+        where s.tid >= fran
+          and s.enhet not like 'event:%' and s.enhet not like 'val:%'
+        group by s.enhet
       ) e
     )
   );
@@ -294,29 +310,6 @@ end $$;
 alter table installningar
   add column if not exists skarm text not null default 'standard'
   constraint skarm_giltig check (skarm in ('standard','a','b','c'));
-
-
--- Kodkontroll, delad av alla skrivande funktioner. Inte
--- anropbar utifrån — bara från funktionerna nedan.
-create or replace function public.krav_kod(kod text)
-returns void
-language plpgsql
-security definer
-set search_path = ''
-as $$
-declare
-  ratt text;
-begin
-  select kod_hash into ratt from public.installningar where id = 1;
-  if kod is null or ratt is null
-     or extensions.crypt(kod, ratt) is distinct from ratt then
-    perform pg_sleep(0.4);
-    raise exception 'fel åtkomstkod' using errcode = '28000';
-  end if;
-end;
-$$;
-
-revoke all on function public.krav_kod(text) from public, anon, authenticated;
 
 
 -- Det plattan frågar efter var 15:e sekund
@@ -487,6 +480,258 @@ revoke execute on function public.hamta_statistik(text, int), public.aktivt_even
   public.satt_skarm(text, text), public.lista_event(text), public.avsluta_event(text, bigint),
   public.spara_event(text, text, text, timestamptz, timestamptz, jsonb, bigint)
   from authenticated;
+
+
+-- ---------------------------------------------------------
+--  6. Perioder och enskilda svar
+--
+--  Översikten visar dag, vecka, månad eller år för valfritt
+--  datum, och låter byrån rätta felklick: ändra betyg, ta bort
+--  eller lägga till ett svar. Allt räknas i svensk tid.
+--  Eventsvar (event:/val:) rörs inte här — de hör till eventet.
+-- ---------------------------------------------------------
+
+-- Statistik för en valfri period, plus en jämförelseperiod
+create or replace function public.hamta_period(
+  kod     text,
+  p_fran  date,
+  p_till  date,
+  p_jfran date default null,
+  p_jtill date default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  tz constant text := 'Europe/Stockholm';
+  a  timestamptz;
+  b  timestamptz;
+  ja timestamptz;
+  jb timestamptz;
+begin
+  perform public.krav_kod(kod);
+
+  if p_fran is null or p_till is null or p_till < p_fran or p_till - p_fran > 366 then
+    raise exception 'ogiltig period' using errcode = '22023';
+  end if;
+
+  a := p_fran::timestamp at time zone tz;
+  b := (p_till + 1)::timestamp at time zone tz;
+  if p_jfran is not null and p_jtill is not null and p_jtill >= p_jfran and p_jtill - p_jfran <= 366 then
+    ja := p_jfran::timestamp at time zone tz;
+    jb := (p_jtill + 1)::timestamp at time zone tz;
+  end if;
+
+  return jsonb_build_object(
+    'genererad', now(),
+    'fran',      p_fran,
+    'till',      p_till,
+
+    'totalt', (
+      select jsonb_build_object(
+        'antal',     count(*),
+        'snitt',     round(avg(s.betyg)::numeric, 2),
+        'nojda',     count(*) filter (where s.betyg >= 4),
+        'missnojda', count(*) filter (where s.betyg <= 2)
+      )
+      from public.svar s
+      where s.tid >= a and s.tid < b
+        and s.enhet not like 'event:%' and s.enhet not like 'val:%'
+    ),
+
+    'jamfor', case when ja is null then null else (
+      select jsonb_build_object(
+        'antal',     count(*),
+        'snitt',     round(avg(s.betyg)::numeric, 2),
+        'nojda',     count(*) filter (where s.betyg >= 4),
+        'missnojda', count(*) filter (where s.betyg <= 2)
+      )
+      from public.svar s
+      where s.tid >= ja and s.tid < jb
+        and s.enhet not like 'event:%' and s.enhet not like 'val:%'
+    ) end,
+
+    'per_dag', (
+      select coalesce(jsonb_agg(jsonb_build_object(
+        'dag', d.dag, 'antal', d.antal, 'snitt', d.snitt,
+        'summa', d.summa, 'nojda', d.nojda, 'missnojda', d.missnojda
+      ) order by d.dag), '[]'::jsonb)
+      from (
+        select (s.tid at time zone tz)::date as dag,
+               count(*) as antal,
+               round(avg(s.betyg)::numeric, 2) as snitt,
+               sum(s.betyg) as summa,
+               count(*) filter (where s.betyg >= 4) as nojda,
+               count(*) filter (where s.betyg <= 2) as missnojda
+        from public.svar s
+        where s.tid >= a and s.tid < b
+          and s.enhet not like 'event:%' and s.enhet not like 'val:%'
+        group by 1
+      ) d
+    ),
+
+    'per_timme', (
+      select coalesce(jsonb_agg(jsonb_build_object(
+        'timme', h.timme, 'antal', h.antal, 'snitt', h.snitt
+      ) order by h.timme), '[]'::jsonb)
+      from (
+        select extract(hour from s.tid at time zone tz)::int as timme,
+               count(*) as antal,
+               round(avg(s.betyg)::numeric, 2) as snitt
+        from public.svar s
+        where s.tid >= a and s.tid < b
+          and s.enhet not like 'event:%' and s.enhet not like 'val:%'
+        group by 1
+      ) h
+    ),
+
+    'fordelning', (
+      select coalesce(jsonb_object_agg(f.betyg, f.antal), '{}'::jsonb)
+      from (
+        select s.betyg, count(*) as antal
+        from public.svar s
+        where s.tid >= a and s.tid < b
+          and s.enhet not like 'event:%' and s.enhet not like 'val:%'
+        group by s.betyg
+      ) f
+    )
+  );
+end;
+$$;
+
+revoke all on function public.hamta_period(text, date, date, date, date) from public, authenticated;
+grant execute on function public.hamta_period(text, date, date, date, date) to anon;
+
+
+-- Enskilda svar i en period (senaste 1000)
+create or replace function public.lista_svar(kod text, p_fran date, p_till date)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  tz constant text := 'Europe/Stockholm';
+begin
+  perform public.krav_kod(kod);
+  if p_fran is null or p_till is null or p_till < p_fran or p_till - p_fran > 366 then
+    raise exception 'ogiltig period' using errcode = '22023';
+  end if;
+  return (
+    select coalesce(jsonb_agg(jsonb_build_object(
+      'id', x.id, 'betyg', x.betyg, 'tid', x.tid, 'enhet', x.enhet
+    ) order by x.tid desc), '[]'::jsonb)
+    from (
+      select s.id, s.betyg, s.tid, s.enhet
+      from public.svar s
+      where s.tid >= (p_fran::timestamp at time zone tz)
+        and s.tid <  ((p_till + 1)::timestamp at time zone tz)
+        and s.enhet not like 'event:%' and s.enhet not like 'val:%'
+      order by s.tid desc
+      limit 1000
+    ) x
+  );
+end;
+$$;
+
+revoke all on function public.lista_svar(text, date, date) from public, authenticated;
+grant execute on function public.lista_svar(text, date, date) to anon;
+
+
+-- Ändra betyget på ett svar (felklick)
+create or replace function public.andra_svar(kod text, p_id bigint, p_betyg int)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  rad bigint;
+begin
+  perform public.krav_kod(kod);
+  if p_betyg is null or p_betyg not between 1 and 5 then
+    raise exception 'betyget måste vara 1–5' using errcode = '22023';
+  end if;
+  update public.svar set betyg = p_betyg
+   where id = p_id
+     and enhet not like 'event:%' and enhet not like 'val:%'
+  returning id into rad;
+  if rad is null then
+    raise exception 'svaret finns inte' using errcode = '22023';
+  end if;
+  return jsonb_build_object('id', rad, 'betyg', p_betyg);
+end;
+$$;
+
+revoke all on function public.andra_svar(text, bigint, int) from public, authenticated;
+grant execute on function public.andra_svar(text, bigint, int) to anon;
+
+
+-- Ta bort ett svar (felklick)
+create or replace function public.ta_bort_svar(kod text, p_id bigint)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  rad bigint;
+begin
+  perform public.krav_kod(kod);
+  delete from public.svar
+   where id = p_id
+     and enhet not like 'event:%' and enhet not like 'val:%'
+  returning id into rad;
+  if rad is null then
+    raise exception 'svaret finns inte' using errcode = '22023';
+  end if;
+  return jsonb_build_object('id', rad);
+end;
+$$;
+
+revoke all on function public.ta_bort_svar(text, bigint) from public, authenticated;
+grant execute on function public.ta_bort_svar(text, bigint) to anon;
+
+
+-- Lägg till ett svar i efterhand. Märks 'manuell' så det syns
+-- i listan att det inte kom från plattan.
+create or replace function public.lagg_till_svar(kod text, p_betyg int, p_tid timestamptz default null)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  rad bigint;
+begin
+  perform public.krav_kod(kod);
+  p_tid := coalesce(p_tid, now());
+  if p_betyg is null or p_betyg not between 1 and 5 then
+    raise exception 'betyget måste vara 1–5' using errcode = '22023';
+  end if;
+  if p_tid > now() + interval '5 minutes' or p_tid < now() - interval '2 years' then
+    raise exception 'tiden måste vara bakåt i tiden, högst två år' using errcode = '22023';
+  end if;
+  insert into public.svar (betyg, tid, enhet)
+  values (p_betyg, p_tid, 'manuell')
+  returning id into rad;
+  return jsonb_build_object('id', rad);
+end;
+$$;
+
+revoke all on function public.lagg_till_svar(text, int, timestamptz) from public, authenticated;
+grant execute on function public.lagg_till_svar(text, int, timestamptz) to anon;
+
+
+
+
+comment on function public.hamta_period(text, date, date, date, date)       is 'Anropbar för anon: kräver åtkomstkod.';
+comment on function public.lista_svar(text, date, date)                      is 'Anropbar för anon: kräver åtkomstkod.';
+comment on function public.andra_svar(text, bigint, int)                     is 'Anropbar för anon: kräver åtkomstkod.';
+comment on function public.ta_bort_svar(text, bigint)                        is 'Anropbar för anon: kräver åtkomstkod.';
+comment on function public.lagg_till_svar(text, int, timestamptz)            is 'Anropbar för anon: kräver åtkomstkod.';
 
 
 -- ---------------------------------------------------------

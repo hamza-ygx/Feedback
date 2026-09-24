@@ -33,6 +33,17 @@ Ange sedan åtkomstkoden.
 Knappen **Visa med exempeldata** öppnar översikten utan databas — bra när
 man vill visa utseendet utan nät.
 
+## Statistik per dag, vecka, månad och år
+
+Fliken **Statistik** visar valfri **dag, vecka, månad eller år**. Bläddra med
+‹ › (eller piltangenterna), hoppa till ett datum med **Gå till**, och tillbaka
+med **Idag**. Nyckeltalen jämförs med perioden före. Allt räknas i svensk tid.
+
+**Enskilda svar** längst ned listar periodens svar. Felklick rättas direkt:
+tryck på rätt ansikte för att ändra betyget, **Ta bort** för att radera, eller
+**+ Lägg till svar** för ett svar i efterhand (märks *Tillagt*). Eventsvar
+rörs inte här — de hör till eventet.
+
 ## Styra skärmen från översikten
 
 Fliken **Skärm & event** i översikten (`/dashboard.html#styrning`):

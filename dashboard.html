@@ -488,6 +488,97 @@ fieldset.grupp legend span{font-weight:500;color:var(--muted);}
 #toast.pa{opacity:1;transform:translate(-50%,0);}
 #toast.fel{background:var(--c1);}
 
+/* ---------- Periodval ---------- */
+
+.periodrad{
+  display:flex;align-items:center;flex-wrap:wrap;gap:.6rem .8rem;
+  background:var(--paper);
+  border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:.6rem .8rem;
+}
+.periodrad .nav{display:flex;align-items:center;justify-content:center;gap:.4rem;flex:1 1 16rem;min-width:0;}
+.periodrad .nav b{font-size:.95rem;font-weight:600;text-align:center;flex:1 1 auto;min-width:0;}
+.periodrad .datum{display:flex;align-items:center;gap:.4rem;font-size:.75rem;font-weight:600;color:var(--muted);}
+.periodrad input[type="date"]{
+  font-family:inherit;font-size:.82rem;
+  padding:.35rem .5rem;
+  border:1.5px solid var(--line);border-radius:7px;
+  background:var(--paper);color:var(--ink);
+}
+.periodrad .knapp[hidden]{display:none;}
+.ikon[disabled]{opacity:.35;cursor:default;}
+.ikon[disabled]:hover{color:var(--muted);}
+@media (max-width:560px){
+  .periodrad .pills{flex:1 1 100%;}
+  .periodrad .pills button{flex:1;}
+  .periodrad .nav{flex-basis:100%;order:-1;}
+}
+.duo.en{grid-template-columns:1fr;}
+.duo.en svg.diagram{max-height:230px;}
+.kort[hidden]{display:none;}
+
+/* ---------- Enskilda svar ---------- */
+
+#svarKort header{flex-wrap:wrap;}
+#svarKort header .vaxla{margin-left:.6rem;}
+.svarny{
+  display:flex;flex-wrap:wrap;align-items:flex-end;gap:.8rem 1rem;
+  background:var(--ground);border-radius:8px;
+  padding:.8rem .9rem;margin-bottom:.6rem;
+}
+.svarny[hidden]{display:none;}
+.svarny .fel{flex-basis:100%;min-height:0;margin:0;font-size:.8rem;font-weight:500;color:var(--c1);}
+.svarny .fel:empty{display:none;}
+.svarny input[type="datetime-local"]{
+  font-family:inherit;font-size:.88rem;
+  padding:.45rem .6rem;border:1.5px solid var(--line);border-radius:7px;
+  background:var(--paper);color:var(--ink);
+}
+.ansikten{display:flex;gap:.3rem;}
+.ansikten button{
+  border:2px solid transparent;border-radius:50%;
+  background:none;padding:2px;line-height:0;
+}
+.ansikten button svg{width:34px;height:34px;}
+.ansikten button[aria-pressed="true"]{border-color:var(--ink);}
+
+.svarlista{display:flex;flex-direction:column;}
+.svarrad{
+  display:flex;align-items:center;flex-wrap:wrap;gap:.3rem .7rem;
+  padding:.4rem 0;
+  border-bottom:1px solid var(--grid);
+  font-size:.82rem;
+}
+.svarrad:last-child{border-bottom:0;}
+.svarrad .tid{flex:0 0 10.5rem;font-variant-numeric:tabular-nums;}
+.minif{display:flex;gap:.1rem;}
+.minif button{
+  border:0;background:none;border-radius:6px;
+  padding:.15rem;line-height:0;
+  opacity:.22;filter:grayscale(1);
+  transition:opacity .1s ease;
+}
+.minif button:hover, .minif button:focus-visible{opacity:.75;filter:none;}
+.minif button[aria-pressed="true"]{opacity:1;filter:none;cursor:default;}
+.minif button[disabled]:not([aria-pressed="true"]){cursor:wait;}
+.minif svg{width:22px;height:22px;display:block;}
+.svarrad .namn{color:var(--muted);font-size:.75rem;min-width:5.5rem;}
+.tabort{
+  margin-left:auto;
+  border:1px solid transparent;border-radius:6px;
+  background:none;color:var(--muted);
+  font-size:.75rem;font-weight:600;
+  padding:.3rem .55rem;
+}
+.tabort:hover{color:var(--c1);border-color:var(--c1);}
+.knapp.fler{margin-top:.7rem;}
+.knapp.fler[hidden]{display:none;}
+@media (max-width:560px){
+  .svarrad .tid{flex-basis:100%;}
+  .svarrad .namn{display:none;}
+}
+
 @media (prefers-reduced-motion:reduce){
   *{animation:none!important;transition:none!important;}
 }
@@ -522,11 +613,6 @@ fieldset.grupp legend span{font-weight:500;color:var(--muted);}
       <button role="tab" data-vy="stat" aria-selected="true"  aria-controls="vyStat">Statistik</button>
       <button role="tab" data-vy="styr" aria-selected="false" aria-controls="vyStyr">Skärm &amp; event</button>
     </div>
-    <div class="pills" role="group" aria-label="Period">
-      <button data-d="7"  aria-pressed="false">7 dagar</button>
-      <button data-d="30" aria-pressed="true">30 dagar</button>
-      <button data-d="90" aria-pressed="false">90 dagar</button>
-    </div>
     <button class="ikon" id="uppdatera" title="Uppdatera" aria-label="Uppdatera">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
         <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"/><path d="M13.7 1.8v2.7h-2.7"/>
@@ -542,29 +628,72 @@ fieldset.grupp legend span{font-weight:500;color:var(--muted);}
   <div class="demoband" id="demoband">Exempeldata — inte kopplad till databasen</div>
 
   <main id="vyStat" role="tabpanel">
+    <div class="periodrad">
+      <div class="pills" role="group" aria-label="Period">
+        <button type="button" data-p="dag"   aria-pressed="false">Dag</button>
+        <button type="button" data-p="vecka" aria-pressed="true">Vecka</button>
+        <button type="button" data-p="manad" aria-pressed="false">Månad</button>
+        <button type="button" data-p="ar"    aria-pressed="false">År</button>
+      </div>
+      <div class="nav">
+        <button type="button" class="ikon" id="bakat" aria-label="Föregående period" title="Föregående (←)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5 5.5 8l4.5 4.5"/></svg>
+        </button>
+        <b id="periodEtikett" aria-live="polite">—</b>
+        <button type="button" class="ikon" id="framat" aria-label="Nästa period" title="Nästa (→)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5 10.5 8 6 12.5"/></svg>
+        </button>
+      </div>
+      <label class="datum"><span>Gå till</span><input type="date" id="datumVal" aria-label="Välj datum"></label>
+      <button type="button" class="knapp" id="tillIdag">Idag</button>
+    </div>
+
     <section class="tiles" id="tiles" aria-label="Nyckeltal"></section>
 
     <div class="duo">
       <section class="kort">
-        <header><h2>Svar per dag</h2><button class="vaxla" id="vaxlaTabell">Tabell</button></header>
+        <header><h2 id="antalTitel">Svar per dag</h2><button class="vaxla" id="vaxlaTabell">Tabell</button></header>
         <div id="kAntal"></div>
       </section>
       <section class="kort">
-        <header><h2>Snittbetyg per dag</h2><span>skala 1–5</span></header>
+        <header><h2 id="snittTitel">Snittbetyg per dag</h2><span>skala 1–5</span></header>
         <div id="kSnitt"></div>
       </section>
     </div>
 
-    <div class="duo">
+    <div class="duo" id="duo2">
       <section class="kort">
         <header><h2>Fördelning av betyg</h2><span id="fordelningSub"></span></header>
         <div id="kFordelning"></div>
       </section>
-      <section class="kort">
+      <section class="kort" id="timmeKort">
         <header><h2>Svar per timme</h2><span>när på dagen folk trycker</span></header>
         <div id="kTimme"></div>
       </section>
     </div>
+
+    <section class="kort" id="svarKort">
+      <header>
+        <h2>Enskilda svar</h2><span id="svarSub"></span>
+        <button type="button" class="vaxla" id="svarNyKnapp">+ Lägg till svar</button>
+      </header>
+      <form class="svarny" id="svarNy" hidden novalidate>
+        <div class="falt">
+          <span>Betyg</span>
+          <div class="ansikten" id="nyBetyg" role="group" aria-label="Betyg"></div>
+        </div>
+        <label class="falt"><span>Tid</span><input type="datetime-local" id="nyTid"></label>
+        <div class="knappar">
+          <button type="submit" class="knapp primar" id="nySpara">Lägg till</button>
+          <button type="button" class="knapp" id="nyAvbryt">Avbryt</button>
+        </div>
+        <p class="fel" id="nyFel" role="alert"></p>
+      </form>
+      <div class="svarlista" id="svarLista"></div>
+      <button type="button" class="knapp fler" id="svarFler" hidden>Visa fler</button>
+      <p class="fotnot">Felklick? Tryck på rätt ansikte för att ändra betyget, eller ta bort svaret.
+        Svar som lagts till här märks <b>tillagt</b>.</p>
+    </section>
   </main>
 
   <main id="vyStyr" role="tabpanel" hidden>
@@ -688,78 +817,169 @@ var NAMN  = ["Mycket dåligt","Dåligt","Okej","Bra","Mycket bra"];
 var MUNNAR= ["M30,72 Q50,52 70,72","M30,69 Q50,58 70,69","M31,64 L69,64",
              "M30,60 Q50,71 70,60","M30,57 Q50,78 70,57"];
 
-var KODNYCKEL = "rkjh.oversikt.kod";
-var state = { kod:null, demo:false, dagar:30, data:null, tabell:false };
+var KODNYCKEL    = "rkjh.oversikt.kod";
+var PERIODNYCKEL = "rkjh.oversikt.period";
+var TYPER_P      = ["dag","vecka","manad","ar"];
+
+var state = { kod:null, demo:false, typ:"vecka", ankare:new Date(), data:null,
+              svar:[], visade:50, tabell:false, upptagen:false };
+try{
+  var sparadPeriod = localStorage.getItem(PERIODNYCKEL);
+  if (TYPER_P.indexOf(sparadPeriod) >= 0) state.typ = sparadPeriod;
+}catch(err){}
 
 var $ = function(id){ return document.getElementById(id); };
 var css = function(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); };
 
-var fmt  = new Intl.NumberFormat("sv-SE");
-var fmt1 = new Intl.NumberFormat("sv-SE",{minimumFractionDigits:1,maximumFractionDigits:1});
-var dfmt = new Intl.DateTimeFormat("sv-SE",{day:"numeric",month:"short"});
-var tfmt = new Intl.DateTimeFormat("sv-SE",{hour:"2-digit",minute:"2-digit"});
+var fmt   = new Intl.NumberFormat("sv-SE");
+var fmt1  = new Intl.NumberFormat("sv-SE",{minimumFractionDigits:1,maximumFractionDigits:1});
+var dfmt  = new Intl.DateTimeFormat("sv-SE",{day:"numeric",month:"short"});
+var tfmt  = new Intl.DateTimeFormat("sv-SE",{hour:"2-digit",minute:"2-digit"});
+var dlang = new Intl.DateTimeFormat("sv-SE",{weekday:"long",day:"numeric",month:"long"});
+var dkort = new Intl.DateTimeFormat("sv-SE",{weekday:"short",day:"numeric"});
+var mlang = new Intl.DateTimeFormat("sv-SE",{month:"long",year:"numeric"});
+var mkort = new Intl.DateTimeFormat("sv-SE",{month:"short"});
+var sfmt  = new Intl.DateTimeFormat("sv-SE",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
 
 /* -------------------------------------------------------
-   Hämta statistik
+   Perioder
+
+   Alla datum är lokala kalenderdagar (svensk tid, samma som
+   databasen räknar i). Aldrig toISOString() på ett datum —
+   det ger UTC och byter dag vid midnatt.
    ------------------------------------------------------- */
 
-function hamta(kod, dagar){
-  return fetch(DB.url + "/rest/v1/rpc/hamta_statistik", {
-    method:"POST",
-    headers:{
-      "apikey": DB.nyckel,
-      "Authorization": "Bearer " + DB.nyckel,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ kod:kod, dagar:dagar })
-  }).then(function(r){
-    if (r.status === 403) throw { typ:"kod" };
-    if (!r.ok) throw { typ:"natet" };
-    return r.json();
-  });
+function iso(d){
+  var p = function(n){ return String(n).padStart(2, "0"); };
+  return d.getFullYear() + "-" + p(d.getMonth()+1) + "-" + p(d.getDate());
+}
+function franIso(s){ var p = s.split("-"); return new Date(+p[0], p[1]-1, +p[2]); }
+function plusDagar(d, n){ return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+function idag(){ var n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
+function stor(t){ return t.charAt(0).toUpperCase() + t.slice(1); }
+
+function veckonummer(d){
+  var t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  t.setUTCDate(t.getUTCDate() + 3 - (t.getUTCDay() + 6) % 7);
+  var forsta = new Date(Date.UTC(t.getUTCFullYear(), 0, 4));
+  return 1 + Math.round(((t - forsta) / 864e5 - 3 + (forsta.getUTCDay() + 6) % 7) / 7);
+}
+
+function intervall(typ, ank){
+  var d = new Date(ank.getFullYear(), ank.getMonth(), ank.getDate());
+  if (typ === "dag")   return { a:d, b:d };
+  if (typ === "vecka"){ var a = plusDagar(d, -((d.getDay() + 6) % 7)); return { a:a, b:plusDagar(a, 6) }; }
+  if (typ === "manad") return { a:new Date(d.getFullYear(), d.getMonth(), 1), b:new Date(d.getFullYear(), d.getMonth()+1, 0) };
+  return { a:new Date(d.getFullYear(), 0, 1), b:new Date(d.getFullYear(), 11, 31) };
+}
+
+function flytta(typ, ank, steg){
+  if (typ === "dag")   return plusDagar(ank, steg);
+  if (typ === "vecka") return plusDagar(ank, 7 * steg);
+  if (typ === "manad") return new Date(ank.getFullYear(), ank.getMonth() + steg, 1);
+  return new Date(ank.getFullYear() + steg, 0, 1);
+}
+
+function aktuell(){ return intervall(state.typ, state.ankare); }
+function jamforelse(){ return intervall(state.typ, flytta(state.typ, state.ankare, -1)); }
+function innehallerIdag(r){ var t = idag(); return r.a <= t && t <= r.b; }
+
+var JAMFORD = { dag:"dagen före", vecka:"veckan före", manad:"månaden före", ar:"året före" };
+
+function periodText(){
+  var r = aktuell(), t = idag(), iAr = r.a.getFullYear() === t.getFullYear();
+  if (state.typ === "dag"){
+    var namn = +r.a === +t ? "Idag · " : +r.a === +plusDagar(t, -1) ? "Igår · " : "";
+    return (namn ? namn + dlang.format(r.a) : stor(dlang.format(r.a))) + (iAr ? "" : " " + r.a.getFullYear());
+  }
+  if (state.typ === "vecka"){
+    var spann = r.a.getMonth() === r.b.getMonth()
+      ? r.a.getDate() + "–" + dfmt.format(r.b)
+      : dfmt.format(r.a) + " – " + dfmt.format(r.b);
+    return "Vecka " + veckonummer(r.a) + " · " + spann + (iAr ? "" : " " + r.b.getFullYear());
+  }
+  if (state.typ === "manad") return stor(mlang.format(r.a));
+  return String(r.a.getFullYear());
 }
 
 /* -------------------------------------------------------
-   Exempeldata — samma form som funktionen i databasen
+   Hämta — databasen, eller exempeldata i minnet
    ------------------------------------------------------- */
 
-function exempeldata(dagar){
-  var perDag=[], ford={1:0,2:0,3:0,4:0,5:0}, timmar={}, tot=0, sum=0, noj=0, mis=0;
-  var nu = new Date();
-
-  for (var i=dagar-1;i>=0;i--){
-    var d = new Date(nu); d.setDate(d.getDate()-i);
-    var vd = (d.getDay()+6)%7;                      // 0 = måndag
-    var antal = vd===6 ? 0 : vd===5 ? Math.floor(Math.random()*4)
-                            : 9+Math.floor(Math.random()*13);
-    var dip = (i>=9 && i<=13) ? -0.30 : 0;
-    var da={dag:d.toISOString().slice(0,10),antal:0,snitt:null,nojda:0,missnojda:0}, s=0;
-
-    for (var k=0;k<antal;k++){
-      var r = Math.random()+dip;
-      var b = r<0.04?1 : r<0.10?2 : r<0.22?3 : r<0.55?4 : 5;
-      var tm = 8 + Math.floor(Math.pow(Math.random(),1.4)*9);
-      ford[b]++; s+=b; tot++; sum+=b;
-      if (b>=4){noj++;da.nojda++;} if (b<=2){mis++;da.missnojda++;}
-      timmar[tm] = timmar[tm]||{antal:0,sum:0};
-      timmar[tm].antal++; timmar[tm].sum+=b;
-    }
-    da.antal=antal;
-    if (antal) da.snitt=Math.round(s/antal*100)/100;
-    perDag.push(da);
+function hamtaAllt(kod){
+  var r = aktuell(), j = jamforelse();
+  if (state.demo){
+    var rader = demoSvarLista();
+    return Promise.resolve([aggregera(rader, r, j), demoLista(rader, r)]);
   }
+  return Promise.all([
+    rpc("hamta_period", { kod:kod, p_fran:iso(r.a), p_till:iso(r.b), p_jfran:iso(j.a), p_jtill:iso(j.b) }),
+    rpc("lista_svar",   { kod:kod, p_fran:iso(r.a), p_till:iso(r.b) })
+  ]);
+}
 
+/* Exempelsvar: ett år bakåt, vardagar, kontorstid, mest nöjda —
+   och en svacka för ett par veckor sedan. Ligger i minnet så att
+   ändra/ta bort/lägga till fungerar även i exempelläget.        */
+var demoSvar = null;
+function demoSvarLista(){
+  if (demoSvar) return demoSvar;
+  demoSvar = [];
+  var t = idag(), id = 1;
+  for (var i = 400; i >= 0; i--){
+    var d = plusDagar(t, -i), vd = (d.getDay() + 6) % 7;
+    var antal = vd === 6 ? 0 : vd === 5 ? Math.floor(Math.random()*4) : 9 + Math.floor(Math.random()*13);
+    var dip = (i >= 9 && i <= 13) ? -0.30 : 0;
+    for (var k = 0; k < antal; k++){
+      var r = Math.random() + dip;
+      var tid = new Date(d); tid.setHours(8 + Math.floor(Math.pow(Math.random(), 1.4) * 9), Math.floor(Math.random()*60));
+      if (tid > new Date()) continue;
+      demoSvar.push({ id:id++, betyg: r<0.04?1 : r<0.10?2 : r<0.22?3 : r<0.55?4 : 5,
+                      tid:tid.toISOString(), enhet:"entre" });
+    }
+  }
+  return demoSvar;
+}
+
+function iIntervall(rad, r){
+  var t = new Date(rad.tid);
+  return t >= r.a && t < plusDagar(r.b, 1);
+}
+
+function demoLista(rader, r){
+  return rader.filter(function(x){ return iIntervall(x, r); })
+    .sort(function(x, y){ return new Date(y.tid) - new Date(x.tid); })
+    .slice(0, 1000);
+}
+
+/* Samma form som hamta_period() i databasen */
+function aggregera(rader, r, j){
+  function totalt(lista){
+    var n = lista.length, sum = 0, noj = 0, mis = 0;
+    lista.forEach(function(x){ sum += x.betyg; if (x.betyg >= 4) noj++; if (x.betyg <= 2) mis++; });
+    return { antal:n, snitt:n ? Math.round(sum/n*100)/100 : null, nojda:noj, missnojda:mis };
+  }
+  var i = rader.filter(function(x){ return iIntervall(x, r); });
+  var dagar = {}, timmar = {}, ford = {};
+  i.forEach(function(x){
+    var t = new Date(x.tid), k = iso(t), h = t.getHours();
+    var d = dagar[k] = dagar[k] || { dag:k, antal:0, summa:0, nojda:0, missnojda:0 };
+    d.antal++; d.summa += x.betyg; if (x.betyg >= 4) d.nojda++; if (x.betyg <= 2) d.missnojda++;
+    var tm = timmar[h] = timmar[h] || { timme:h, antal:0, summa:0 };
+    tm.antal++; tm.summa += x.betyg;
+    ford[x.betyg] = (ford[x.betyg] || 0) + 1;
+  });
   return {
-    genererad:new Date().toISOString(), dagar:dagar,
-    totalt:{antal:tot,snitt:tot?Math.round(sum/tot*100)/100:null,nojda:noj,missnojda:mis,
-            idag:perDag[perDag.length-1].antal},
-    per_dag:perDag,
-    fordelning:ford,
-    per_timme:Object.keys(timmar).sort(function(a,b){return a-b}).map(function(t){
-      return {timme:+t,antal:timmar[t].antal,
-              snitt:Math.round(timmar[t].sum/timmar[t].antal*100)/100};
+    genererad: new Date().toISOString(),
+    totalt: totalt(i),
+    jamfor: totalt(rader.filter(function(x){ return iIntervall(x, j); })),
+    per_dag: Object.keys(dagar).sort().map(function(k){
+      var d = dagar[k]; d.snitt = Math.round(d.summa/d.antal*100)/100; return d;
     }),
-    per_enhet:[{enhet:"entre",antal:tot,snitt:tot?Math.round(sum/tot*100)/100:null}]
+    per_timme: Object.keys(timmar).sort(function(a, b){ return a - b; }).map(function(h){
+      var t = timmar[h]; return { timme:t.timme, antal:t.antal, snitt:Math.round(t.summa/t.antal*100)/100 };
+    }),
+    fordelning: ford
   };
 }
 
@@ -776,8 +996,8 @@ $("gateForm").addEventListener("submit", function(e){
   $("gateKnapp").disabled = true;
   $("gateFel").textContent = "";
 
-  hamta(kod, state.dagar).then(function(data){
-    state.kod = kod; state.demo = false; state.data = data;
+  hamtaAllt(kod).then(function(res){
+    state.kod = kod; state.demo = false; state.data = res[0]; state.svar = res[1] || [];
     if ($("komIhag").checked){
       try{ localStorage.setItem(KODNYCKEL, kod); }catch(err){}
     }
@@ -801,8 +1021,10 @@ function visaFel(txt){
 
 $("gateDemo").addEventListener("click", function(){
   state.demo = true;
-  state.data = exempeldata(state.dagar);
-  oppna();
+  hamtaAllt(null).then(function(res){
+    state.data = res[0]; state.svar = res[1];
+    oppna();
+  });
 });
 
 function oppna(){
@@ -815,9 +1037,10 @@ function oppna(){
 
 function lasIgen(){
   try{ localStorage.removeItem(KODNYCKEL); }catch(err){}
-  state.kod = null; state.data = null; state.demo = false;
-  styr.lage = null; styr.lista = []; demo = null;
+  state.kod = null; state.data = null; state.demo = false; state.svar = [];
+  styr.lage = null; styr.lista = []; demo = null; demoSvar = null;
   $("formKort").hidden = true;
+  $("svarNy").hidden = true;
   app.classList.remove("pa");
   gate.style.display = "flex";
   $("kod").value = ""; $("gateKnapp").disabled = false;
@@ -829,81 +1052,171 @@ $("las").addEventListener("click", lasIgen);
   var sparad = null;
   try{ sparad = localStorage.getItem(KODNYCKEL); }catch(err){}
   if (!sparad) return;
-  hamta(sparad, state.dagar).then(function(data){
-    state.kod = sparad; state.data = data; oppna();
-  }).catch(function(){ try{ localStorage.removeItem(KODNYCKEL); }catch(err){} });
+  hamtaAllt(sparad).then(function(res){
+    state.kod = sparad; state.data = res[0]; state.svar = res[1] || []; oppna();
+  }).catch(function(fel){
+    if (fel && fel.typ === "kod"){ try{ localStorage.removeItem(KODNYCKEL); }catch(err){} }
+  });
 })();
 
 /* -------------------------------------------------------
-   Period, uppdatering
+   Periodval, uppdatering
    ------------------------------------------------------- */
 
-Array.prototype.forEach.call(document.querySelectorAll(".pills button"), function(b){
+var periodKnappar = document.querySelectorAll(".periodrad .pills button");
+Array.prototype.forEach.call(periodKnappar, function(b){
   b.addEventListener("click", function(){
-    Array.prototype.forEach.call(document.querySelectorAll(".pills button"), function(x){
-      x.setAttribute("aria-pressed", x===b ? "true" : "false");
-    });
-    state.dagar = +b.dataset.d;
-    ladda(true);
+    if (state.typ === b.dataset.p) return;
+    state.typ = b.dataset.p;
+    try{ localStorage.setItem(PERIODNYCKEL, state.typ); }catch(err){}
+    bytPeriod();
   });
 });
 
-$("uppdatera").addEventListener("click", function(){ ladda(false); });
-setInterval(function(){ if (state.kod || state.demo) ladda(false, true); }, 5*60*1000);
+$("bakat").addEventListener("click", function(){ state.ankare = flytta(state.typ, state.ankare, -1); bytPeriod(); });
+$("framat").addEventListener("click", function(){ if (!this.disabled){ state.ankare = flytta(state.typ, state.ankare, 1); bytPeriod(); } });
+$("tillIdag").addEventListener("click", function(){ state.ankare = idag(); bytPeriod(); });
+$("datumVal").addEventListener("change", function(){
+  if (!this.value) return;
+  var d = franIso(this.value);
+  if (d > idag()) d = idag();
+  state.ankare = d; bytPeriod();
+});
 
-function ladda(rensa, tyst){
-  if (state.demo){
-    state.data = exempeldata(state.dagar);
-    rita();
-    return;
-  }
-  if (!state.kod) return;
+/* ← → bläddrar mellan perioder när man inte skriver i ett fält */
+document.addEventListener("keydown", function(e){
+  if (app.dataset.vy !== "stat" || !app.classList.contains("pa")) return;
+  var tag = (e.target && e.target.tagName) || "";
+  if (/INPUT|TEXTAREA|SELECT/.test(tag) || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === "ArrowLeft")  $("bakat").click();
+  if (e.key === "ArrowRight") $("framat").click();
+});
+
+function bytPeriod(){
+  state.visade = 50;
+  $("svarNy").hidden = true;
+  visaPeriodrad();
+  ladda();
+}
+
+$("uppdatera").addEventListener("click", function(){ ladda(); });
+setInterval(function(){ if ((state.kod || state.demo) && !state.upptagen) ladda(true); }, 5*60*1000);
+
+var laddning = 0;
+function ladda(tyst){
+  if (!state.kod && !state.demo) return Promise.resolve();
+  var nr = ++laddning;
   var knapp = $("uppdatera");
   if (!tyst) knapp.classList.add("snurr");
-  hamta(state.kod, state.dagar).then(function(data){
-    state.data = data; rita();
-  }).catch(function(){
+  return hamtaAllt(state.kod).then(function(res){
+    if (nr !== laddning) return;          // en nyare period hann väljas
+    state.data = res[0]; state.svar = res[1] || [];
+    rita();
+  }).catch(function(fel){
+    if (fel && fel.typ === "kod"){ lasIgen(); return; }
     if (!tyst) $("fot").textContent = "Kunde inte uppdatera — visar senaste hämtningen.";
-  }).then(function(){ knapp.classList.remove("snurr"); });
+  }).then(function(){ if (nr === laddning) knapp.classList.remove("snurr"); });
 }
 
 /* -------------------------------------------------------
    Rendering
    ------------------------------------------------------- */
 
+function visaPeriodrad(){
+  var r = aktuell();
+  Array.prototype.forEach.call(periodKnappar, function(x){
+    x.setAttribute("aria-pressed", x.dataset.p === state.typ ? "true" : "false");
+  });
+  $("periodEtikett").textContent = periodText();
+  $("datumVal").value = iso(state.ankare);
+  $("datumVal").max = iso(idag());
+  $("framat").disabled = r.b >= idag();
+  $("tillIdag").hidden = innehallerIdag(r);
+  if (app.dataset.vy !== "styr") $("underrad").textContent = periodText();
+}
+
 function rita(){
   var d = state.data;
   if (!d) return;
+  visaPeriodrad();
 
-  if (app.dataset.vy !== "styr") $("underrad").textContent = "Senaste " + d.dagar + " dagarna";
-
-  /* --- nyckeltal --- */
-  var t = d.totalt || {};
-  var andel = t.antal ? Math.round(100*t.nojda/t.antal) : null;
+  /* --- nyckeltal, med perioden före som jämförelse --- */
+  var t = d.totalt || {}, j = d.jamfor, jn = JAMFORD[state.typ];
+  var andel  = t.antal ? Math.round(100*t.nojda/t.antal) : null;
+  var jandel = j && j.antal ? Math.round(100*j.nojda/j.antal) : null;
   $("tiles").innerHTML =
-    tile("Svar", fmt.format(t.antal||0), "i perioden") +
-    tile("Snittbetyg", t.snitt!=null ? fmt1.format(t.snitt) : "–", "av 5") +
-    tile("Andel nöjda", andel!=null ? andel+" %" : "–", "betyg 4–5", "--c5") +
-    tile("Missnöjda", fmt.format(t.missnojda||0), "betyg 1–2", t.missnojda ? "--c1" : null) +
-    tile("Idag", fmt.format(t.idag||0), "svar hittills");
+    tile("Svar", fmt.format(t.antal||0), j ? jn + ": " + fmt.format(j.antal||0) : "i perioden") +
+    tile("Snittbetyg", t.snitt!=null ? fmt1.format(t.snitt) : "–",
+         j && j.snitt!=null ? jn + ": " + fmt1.format(j.snitt) : "av 5") +
+    tile("Andel nöjda", andel!=null ? andel+" %" : "–",
+         jandel!=null ? jn + ": " + jandel + " %" : "betyg 4–5", "--c5") +
+    tile("Missnöjda", fmt.format(t.missnojda||0),
+         j ? jn + ": " + fmt.format(j.missnojda||0) : "betyg 1–2", t.missnojda ? "--c1" : null);
 
-  /* --- dagserie: fyll ut alla kalenderdagar --- */
-  var karta = {};
-  (d.per_dag||[]).forEach(function(r){ karta[r.dag] = r; });
-  var serie = [], nu = new Date();
-  for (var i=d.dagar-1;i>=0;i--){
-    var dt = new Date(nu); dt.setDate(dt.getDate()-i);
-    var nyckel = dt.toISOString().slice(0,10);
-    serie.push(karta[nyckel] || {dag:nyckel,antal:0,snitt:null,nojda:0,missnojda:0});
-  }
+  var serie = byggSerie(d);
+  var ord = state.typ === "dag" ? "timme" : state.typ === "ar" ? "månad" : "dag";
+  $("antalTitel").textContent = "Svar per " + ord;
+  $("snittTitel").textContent = "Snittbetyg per " + ord;
 
   ritaAntal(serie);
   ritaSnitt(serie);
   ritaFordelning(d.fordelning||{}, t.antal||0);
-  ritaTimmar(d.per_timme||[]);
+
+  /* per timme är redan huvuddiagrammet i dagsvyn */
+  var dag = state.typ === "dag";
+  $("timmeKort").hidden = dag;
+  $("duo2").classList.toggle("en", dag);
+  if (!dag) ritaTimmar(d.per_timme||[]);
+
+  ritaSvar();
 
   $("fot").textContent = (state.demo ? "Exempeldata · " : "") +
     "Uppdaterad " + tfmt.format(new Date());
+}
+
+/* Staplarna för perioden: timmar (dag), dagar (vecka, månad)
+   eller månader (år). Varje punkt: lbl på axeln, titel i tipset. */
+function byggSerie(d){
+  var r = aktuell(), serie = [];
+
+  if (state.typ === "dag"){
+    var tim = {}; (d.per_timme||[]).forEach(function(x){ tim[x.timme] = x; });
+    var finns = Object.keys(tim).map(Number);
+    var fr = Math.min.apply(null, [8].concat(finns)), ti = Math.max.apply(null, [17].concat(finns));
+    for (var h = fr; h <= ti; h++){
+      var x = tim[h] || { antal:0, snitt:null };
+      serie.push({ lbl:String(h).padStart(2,"0"),
+                   titel:"kl " + String(h).padStart(2,"0") + "–" + String(h+1).padStart(2,"0"),
+                   antal:x.antal, snitt:x.snitt, nojda:null, missnojda:null });
+    }
+    return serie;
+  }
+
+  var karta = {}; (d.per_dag||[]).forEach(function(x){ karta[x.dag] = x; });
+
+  if (state.typ === "ar"){
+    for (var m = 0; m < 12; m++){
+      var ma = new Date(r.a.getFullYear(), m, 1), mb = new Date(r.a.getFullYear(), m+1, 0);
+      var s = { antal:0, summa:0, nojda:0, missnojda:0 };
+      for (var dd = ma; dd <= mb; dd = plusDagar(dd, 1)){
+        var k = karta[iso(dd)];
+        if (k){ s.antal += k.antal; s.summa += (k.summa != null ? +k.summa : k.snitt*k.antal);
+                s.nojda += k.nojda; s.missnojda += k.missnojda; }
+      }
+      serie.push({ lbl:mkort.format(ma).replace(".", ""), titel:stor(mlang.format(ma)),
+                   antal:s.antal, snitt:s.antal ? Math.round(s.summa/s.antal*100)/100 : null,
+                   nojda:s.nojda, missnojda:s.missnojda });
+    }
+    return serie;
+  }
+
+  for (var dt = r.a; dt <= r.b; dt = plusDagar(dt, 1)){
+    var y = karta[iso(dt)] || { antal:0, snitt:null, nojda:0, missnojda:0 };
+    serie.push({ lbl: state.typ === "vecka" ? dkort.format(dt) : String(dt.getDate()),
+                 titel: stor(dlang.format(dt)),
+                 antal:y.antal, snitt:y.snitt, nojda:y.nojda, missnojda:y.missnojda });
+  }
+  return serie;
 }
 
 function tile(et,v,u,prick){
@@ -943,11 +1256,13 @@ function visaTips(html, x, y){
 function gomTips(){ tips.classList.remove("pa"); }
 document.addEventListener("scroll", gomTips, true);
 
-function datumRubrik(iso){
-  return dfmt.format(new Date(iso+"T12:00:00"));
+/* Axeletiketter: alla om de får plats, annars var n:te */
+function visaEtikett(i, n){
+  if (n <= 12) return true;
+  return i % Math.ceil(n / 8) === 0;
 }
 
-/* --- 1. Svar per dag --- */
+/* --- 1. Svar per timme / dag / månad --- */
 
 function ritaAntal(serie){
   var mount = $("kAntal");
@@ -957,7 +1272,7 @@ function ritaAntal(serie){
   var iw=W-M.l-M.r, ih=H-M.t-M.b;
   var max=Math.max(4, Math.max.apply(null, serie.map(function(r){return r.antal;})));
   var svg=el("svg",{viewBox:"0 0 "+W+" "+H,"class":"diagram",role:"img",
-                    "aria-label":"Stapeldiagram över antal svar per dag"});
+                    "aria-label":"Stapeldiagram över antal svar"});
 
   [0,0.5,1].forEach(function(f){
     var y=M.t+ih-f*ih, v=Math.round(f*max);
@@ -966,7 +1281,7 @@ function ritaAntal(serie){
     lbl.textContent=v; svg.appendChild(lbl);
   });
 
-  var steg=iw/serie.length, b=Math.max(2, steg-Math.max(2, steg*0.25));
+  var steg=iw/serie.length, b=Math.max(2, Math.min(38, steg-Math.max(2, steg*0.25)));
   serie.forEach(function(r,i){
     var h=r.antal/max*ih, x=M.l+i*steg+(steg-b)/2, y=M.t+ih-h;
     var s=stapel(x,y,b,h,3,css("--mark"));
@@ -974,7 +1289,7 @@ function ritaAntal(serie){
 
     var hit=el("rect",{x:M.l+i*steg,y:M.t,width:steg,height:ih,fill:"transparent"});
     hit.addEventListener("mousemove",function(e){
-      visaTips("<b>"+datumRubrik(r.dag)+"</b>"+
+      visaTips("<b>"+esc(r.titel)+"</b>"+
         '<div class="rad"><span>Svar</span><span>'+r.antal+"</span></div>"+
         (r.snitt!=null?'<div class="rad"><span>Snitt</span><span>'+fmt1.format(r.snitt)+"</span></div>":"")+
         (r.missnojda?'<div class="rad"><span>Missnöjda</span><span>'+r.missnojda+"</span></div>":""),
@@ -983,19 +1298,11 @@ function ritaAntal(serie){
     hit.addEventListener("mouseleave",gomTips);
     svg.appendChild(hit);
 
-    /* etiketter var sjunde dag — men aldrig så nära sista att de krockar */
-    var sistaI=serie.length-1;
-    if (serie.length<=31 && (i===0||i===sistaI||(i%7===0 && sistaI-i>3 && i>2))){
+    if (visaEtikett(i, serie.length)){
       var d=el("text",{x:M.l+i*steg+steg/2,y:H-6,"text-anchor":"middle","font-size":9.5,fill:css("--muted")});
-      d.textContent=datumRubrik(r.dag); svg.appendChild(d);
+      d.textContent=r.lbl; svg.appendChild(d);
     }
   });
-  if (serie.length>31){
-    [0,serie.length-1].forEach(function(i){
-      var d=el("text",{x:M.l+i*steg+steg/2,y:H-6,"text-anchor":"middle","font-size":9.5,fill:css("--muted")});
-      d.textContent=datumRubrik(serie[i].dag); svg.appendChild(d);
-    });
-  }
 
   mount.innerHTML=""; mount.appendChild(svg);
 }
@@ -1011,17 +1318,19 @@ $("vaxlaTabell").addEventListener("click", function(){
 function ritaTabell(mount, serie){
   var rader = serie.slice().reverse().filter(function(r){return r.antal>0;});
   if (!rader.length){ mount.innerHTML='<p class="tomt">Inga svar i perioden.</p>'; return; }
+  var forsta = state.typ === "dag" ? "Tid" : state.typ === "ar" ? "Månad" : "Dag";
   var html='<div class="tabellwrap"><table class="data"><thead><tr>'+
-    "<th>Dag</th><th>Svar</th><th>Snitt</th><th>Nöjda</th><th>Missnöjda</th></tr></thead><tbody>";
+    "<th>"+forsta+"</th><th>Svar</th><th>Snitt</th><th>Nöjda</th><th>Missnöjda</th></tr></thead><tbody>";
   rader.forEach(function(r){
-    html+="<tr><td>"+datumRubrik(r.dag)+'</td><td class="num">'+r.antal+
+    html+="<tr><td>"+esc(r.titel)+'</td><td class="num">'+r.antal+
       '</td><td class="num">'+(r.snitt!=null?fmt1.format(r.snitt):"–")+
-      '</td><td class="num">'+r.nojda+'</td><td class="num">'+r.missnojda+"</td></tr>";
+      '</td><td class="num">'+(r.nojda!=null?r.nojda:"–")+
+      '</td><td class="num">'+(r.missnojda!=null?r.missnojda:"–")+"</td></tr>";
   });
   mount.innerHTML=html+"</tbody></table></div>";
 }
 
-/* --- 2. Snitt per dag --- */
+/* --- 2. Snittbetyg --- */
 
 function ritaSnitt(serie){
   var W=460,H=190,M={t:12,r:6,b:22,l:30};
@@ -1031,7 +1340,7 @@ function ritaSnitt(serie){
   var x=function(i){ return M.l+i*steg+steg/2; };
 
   var svg=el("svg",{viewBox:"0 0 "+W+" "+H,"class":"diagram",role:"img",
-                    "aria-label":"Linjediagram över snittbetyg per dag, skala 1 till 5"});
+                    "aria-label":"Linjediagram över snittbetyg, skala 1 till 5"});
 
   [1,2,3,4,5].forEach(function(v){
     svg.appendChild(el("line",{x1:M.l,y1:y(v),x2:W-M.r,y2:y(v),stroke:css("--grid"),"stroke-width":1}));
@@ -1039,7 +1348,7 @@ function ritaSnitt(serie){
     lbl.textContent=v; svg.appendChild(lbl);
   });
 
-  /* linjen bryts där dagar saknar svar (helger) */
+  /* linjen bryts där det saknas svar (helger, natt) */
   var seg=[], akt=[];
   serie.forEach(function(r,i){
     if (r.snitt==null){ if (akt.length) seg.push(akt); akt=[]; }
@@ -1075,7 +1384,7 @@ function ritaSnitt(serie){
     var r=serie[i];
     mark.setAttribute("x1",x(i)); mark.setAttribute("x2",x(i));
     mark.setAttribute("opacity",1);
-    visaTips("<b>"+datumRubrik(r.dag)+"</b>"+
+    visaTips("<b>"+esc(r.titel)+"</b>"+
       (r.snitt!=null
         ? '<div class="rad"><span>Snitt</span><span>'+fmt1.format(r.snitt)+"</span></div>"+
           '<div class="rad"><span>Svar</span><span>'+r.antal+"</span></div>"
@@ -1085,9 +1394,10 @@ function ritaSnitt(serie){
   hit.addEventListener("mouseleave",function(){ mark.setAttribute("opacity",0); gomTips(); });
   svg.appendChild(hit);
 
-  [0,serie.length-1].forEach(function(i){
+  serie.forEach(function(r,i){
+    if (!visaEtikett(i, serie.length)) return;
     var d=el("text",{x:x(i),y:H-6,"text-anchor":"middle","font-size":9.5,fill:css("--muted")});
-    d.textContent=datumRubrik(serie[i].dag); svg.appendChild(d);
+    d.textContent=r.lbl; svg.appendChild(d);
   });
 
   var mount=$("kSnitt"); mount.innerHTML=""; mount.appendChild(svg);
@@ -1202,6 +1512,211 @@ function ritaTimmar(rader){
   mount.innerHTML=""; mount.appendChild(svg);
 }
 
+
+/* =======================================================
+   ENSKILDA SVAR
+
+   Rätta felklick: ändra betyget, ta bort eller lägg till ett
+   svar i efterhand. Tillagda svar får enhet "manuell" så att
+   det alltid syns vad som kom från plattan. Eventsvar rörs
+   inte här — de hör till respektive event.
+   ======================================================= */
+
+function ansikte(v){
+  var i = v - 1;
+  return '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+    '<circle cx="50" cy="50" r="45" style="fill:var(' + TONER[i] + ');stroke:var(' + FARG[i] + ')" stroke-width="6"/>' +
+    '<circle cx="35" cy="40" r="6" style="fill:var(' + FARG[i] + ')"/>' +
+    '<circle cx="65" cy="40" r="6" style="fill:var(' + FARG[i] + ')"/>' +
+    '<path d="' + MUNNAR[i] + '" fill="none" style="stroke:var(' + FARG[i] + ')" stroke-width="7" stroke-linecap="round"/>' +
+    '</svg>';
+}
+
+var svarApi = {
+  andra: function(id, betyg){
+    if (state.demo){
+      demoSvarLista().forEach(function(x){ if (x.id === id) x.betyg = betyg; });
+      return Promise.resolve({});
+    }
+    return rpc("andra_svar", { kod:state.kod, p_id:id, p_betyg:betyg });
+  },
+  taBort: function(id){
+    if (state.demo){
+      demoSvar = demoSvarLista().filter(function(x){ return x.id !== id; });
+      return Promise.resolve({});
+    }
+    return rpc("ta_bort_svar", { kod:state.kod, p_id:id });
+  },
+  laggTill: function(betyg, tid){
+    if (state.demo){
+      var lista = demoSvarLista();
+      var nytt = lista.reduce(function(m, x){ return Math.max(m, x.id); }, 0) + 1;
+      lista.push({ id:nytt, betyg:betyg, tid:tid, enhet:"manuell" });
+      return Promise.resolve({ id:nytt });
+    }
+    return rpc("lagg_till_svar", { kod:state.kod, p_betyg:betyg, p_tid:tid });
+  }
+};
+
+/* Varje ändring: lås, anropa, läs om perioden. Löser till true/false. */
+function andraData(lovar, klart){
+  if (state.upptagen) return Promise.resolve(false);
+  state.upptagen = true;
+  lasSvarKnappar(true);
+  return lovar().then(function(){
+    toast(klart);
+    return ladda(true).then(function(){ return true; });
+  }, function(fel){
+    toast((fel && fel.text) || "Något gick fel.", true);
+    if (fel && fel.typ === "kod") lasIgen();
+    return false;
+  }).then(function(ok){
+    state.upptagen = false;
+    lasSvarKnappar(false);
+    return ok;
+  });
+}
+
+function lasSvarKnappar(pa){
+  Array.prototype.forEach.call($("svarKort").querySelectorAll("button"), function(b){
+    if (pa) b.disabled = true;
+    else b.disabled = b.getAttribute("aria-pressed") === "true" && !!b.closest(".minif");
+  });
+}
+
+function ritaSvar(){
+  var lista = state.svar || [];
+  var mount = $("svarLista");
+  $("svarSub").textContent = lista.length
+    ? (lista.length >= 1000 ? "senaste 1 000 i perioden" : fmt.format(lista.length) + " svar i perioden")
+    : "";
+
+  if (!lista.length){
+    mount.innerHTML = '<p class="tomt">Inga svar i perioden.</p>';
+    $("svarFler").hidden = true;
+    return;
+  }
+
+  mount.innerHTML = "";
+  lista.slice(0, state.visade).forEach(function(x){
+    var rad = document.createElement("div");
+    rad.className = "svarrad";
+
+    var tid = document.createElement("span");
+    tid.className = "tid";
+    tid.textContent = stor(sfmt.format(new Date(x.tid)));
+    rad.appendChild(tid);
+
+    var faces = document.createElement("span");
+    faces.className = "minif";
+    faces.setAttribute("role", "group");
+    faces.setAttribute("aria-label", "Betyg");
+    for (var v = 1; v <= 5; v++){
+      (function(v){
+        var b = document.createElement("button");
+        b.type = "button";
+        b.innerHTML = ansikte(v);
+        var vald = v === x.betyg;
+        b.setAttribute("aria-pressed", vald ? "true" : "false");
+        b.setAttribute("aria-label", vald ? NAMN[v-1] + " (nuvarande)" : "Ändra till " + NAMN[v-1]);
+        b.title = vald ? NAMN[v-1] : "Ändra till " + NAMN[v-1];
+        b.disabled = vald;
+        b.addEventListener("click", function(){
+          andraData(function(){ return svarApi.andra(x.id, v); }, "Ändrat till " + NAMN[v-1] + ".");
+        });
+        faces.appendChild(b);
+      })(v);
+    }
+    rad.appendChild(faces);
+
+    var namn = document.createElement("span");
+    namn.className = "namn";
+    namn.textContent = NAMN[x.betyg-1];
+    rad.appendChild(namn);
+
+    if (x.enhet === "manuell"){
+      var m = document.createElement("span");
+      m.className = "badge";
+      m.textContent = "Tillagt";
+      rad.appendChild(m);
+    }
+
+    var tabort = document.createElement("button");
+    tabort.type = "button";
+    tabort.className = "tabort";
+    tabort.textContent = "Ta bort";
+    tabort.addEventListener("click", function(){
+      if (!confirm("Ta bort svaret ”" + NAMN[x.betyg-1] + "” från " + sfmt.format(new Date(x.tid)) + "?")) return;
+      andraData(function(){ return svarApi.taBort(x.id); }, "Svaret är borttaget.");
+    });
+    rad.appendChild(tabort);
+
+    mount.appendChild(rad);
+  });
+
+  var kvar = lista.length - state.visade;
+  $("svarFler").hidden = kvar <= 0;
+  $("svarFler").textContent = "Visa fler (" + fmt.format(kvar) + " till)";
+}
+
+$("svarFler").addEventListener("click", function(){
+  state.visade += 100;
+  ritaSvar();
+});
+
+/* --- lägg till --- */
+
+var nyBetyg = null;
+(function(){
+  var mount = $("nyBetyg");
+  for (var v = 1; v <= 5; v++){
+    (function(v){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.innerHTML = ansikte(v);
+      b.setAttribute("aria-label", NAMN[v-1]);
+      b.title = NAMN[v-1];
+      b.setAttribute("aria-pressed", "false");
+      b.addEventListener("click", function(){ valjNyBetyg(v); });
+      mount.appendChild(b);
+    })(v);
+  }
+})();
+
+function valjNyBetyg(v){
+  nyBetyg = v;
+  Array.prototype.forEach.call($("nyBetyg").querySelectorAll("button"), function(b, i){
+    b.setAttribute("aria-pressed", i + 1 === v ? "true" : "false");
+  });
+}
+
+$("svarNyKnapp").addEventListener("click", function(){
+  var f = $("svarNy");
+  if (!f.hidden){ f.hidden = true; return; }
+  var r = aktuell();
+  /* Förval: nu om perioden är pågående, annars kl 12 periodens sista dag */
+  var tid = innehallerIdag(r) ? new Date() : new Date(r.b.getFullYear(), r.b.getMonth(), r.b.getDate(), 12, 0);
+  $("nyTid").value = lokal(tid);
+  $("nyTid").max = lokal(new Date());
+  $("nyFel").textContent = "";
+  valjNyBetyg(null);
+  f.hidden = false;
+});
+
+$("nyAvbryt").addEventListener("click", function(){ $("svarNy").hidden = true; });
+
+$("svarNy").addEventListener("submit", function(e){
+  e.preventDefault();
+  var fel = function(t){ $("nyFel").textContent = t; };
+  if (!nyBetyg) return fel("Välj ett betyg.");
+  var tid = new Date($("nyTid").value);
+  if (isNaN(tid)) return fel("Ange en tid.");
+  if (tid > new Date(Date.now() + 60000)) return fel("Tiden kan inte ligga i framtiden.");
+  fel("");
+  var b = nyBetyg;
+  andraData(function(){ return svarApi.laggTill(b, tid.toISOString()); }, "Svaret är tillagt.")
+    .then(function(ok){ if (ok) $("svarNy").hidden = true; });
+});
 
 /* =======================================================
    SKÄRM & EVENT
