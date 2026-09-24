@@ -676,8 +676,8 @@ fieldset.grupp legend span{font-weight:500;color:var(--muted);}
    ======================================================= */
 
 var DB = {
-  url:    "https://zersylbcdxfqgtmzvlaf.supabase.co",
-  nyckel: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InplcnN5bGJjZHhmcWd0bXp2bGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5OTYwNjUsImV4cCI6MjEwMjU3MjA2NX0.bURzmunUDxaHoq750S8BTb_Nz1_9Lxzg3Rtlwnd5KZ8"
+  url:    "https://yykoaoildtqyclpregug.supabase.co",
+  nyckel: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5a29hb2lsZHRxeWNscHJlZ3VnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyMjgxODksImV4cCI6MjEwNTgwNDE4OX0.eUIpJAsQ_QrMVCsPo6V__MfbEy3BbGa-DNYDBBA8Nj8"
 };
 
 /* ===================================================== */
@@ -1446,7 +1446,7 @@ function ritaStyr(){
   var varn = $("styrVarning");
   if (styr.saknas){
     varn.className = "varning pa";
-    varn.innerHTML = "<b>Databasen behöver uppdateras.</b> Kör <code>migrering-styrning.sql</code> i " +
+    varn.innerHTML = "<b>Databasen behöver uppdateras.</b> Kör <code>schema.sql</code> i " +
       "Supabase → SQL Editor en gång. Till dess styrs plattan bara av schemalagda event.";
     $("lageLed").className = "led av";
     $("lageText").textContent = "Läget går inte att läsa ännu";

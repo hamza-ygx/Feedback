@@ -1,9 +1,9 @@
 -- =========================================================
 --  Feedbackskärm — komplett databasuppsättning
 --
---  Redan körd på projektet (som tre migrationer). Sparad här
---  så att allt går att återskapa från noll: klistra in allt
---  i Supabase → SQL Editor → Run.
+--  Allt som behövs från noll: klistra in allt i Supabase →
+--  SQL Editor → Run. Går att köra om utan skada. Sätt sedan
+--  en åtkomstkod (se avsnitt 2) — utan den är översikten låst.
 --
 --  Säkerhetsmodellen i en mening: den publika nyckeln får
 --  göra EN sak (lägga till ett svar) — all läsning går genom
@@ -64,7 +64,8 @@ order by 1 desc;
 --  2. Åtkomstkod och läsfunktion
 --
 --  Koden lagras hashad (bcrypt) — den syns inte ens för den
---  som läser databasen. Byt kod så här:
+--  som läser databasen. Repot är publikt, så koden står
+--  aldrig här. Sätt eller byt den så här:
 --
 --    update installningar
 --    set kod_hash = extensions.crypt('NY-KOD', extensions.gen_salt('bf'))
@@ -82,7 +83,9 @@ alter table installningar enable row level security;
 -- Inga policyer och inga grants: tabellen är helt stängd utåt.
 
 insert into installningar (id, kod_hash)
-values (1, extensions.crypt('RKJH-7293', extensions.gen_salt('bf')))
+-- Slumpad kod som ingen känner till: allt är låst tills en
+-- riktig kod sätts med raden ovan.
+values (1, extensions.crypt(gen_random_uuid()::text, extensions.gen_salt('bf')))
 on conflict (id) do nothing;   -- skriver inte över en redan satt kod
 
 create or replace function hamta_statistik(kod text, dagar int default 30)
@@ -262,7 +265,14 @@ grant execute on function aktivt_event() to anon;
 --
 --  rls_auto_enable() skapas av projektinställningen "Enable
 --  automatic RLS" och behöver aldrig nås via API:et.
+--
+--  Nya Supabase-projekt kan ge anon rättigheter på nya tabeller
+--  automatiskt. RLS stänger ändå, men rättigheterna ska vara
+--  exakt det som står ovan: insert på svar, inget annat.
 -- ---------------------------------------------------------
+
+revoke all on table svar, svar_per_dag, installningar, event from anon, authenticated;
+grant insert on table svar to anon;
 
 do $$
 begin
@@ -278,7 +288,6 @@ end $$;
 --
 --  Översikten väljer skärm (original, A, B, C) och startar,
 --  ändrar och avslutar event. Plattan läser via skarm_lage().
---  Finns också fristående i migrering-styrning.sql.
 -- ---------------------------------------------------------
 
 -- Vilken skärm plattan ska visa när inget event pågår
@@ -473,10 +482,16 @@ comment on function public.avsluta_event(text, bigint) is 'Anropbar för anon: k
 comment on function public.spara_event(text, text, text, timestamptz, timestamptz, jsonb, bigint)
   is 'Anropbar för anon: kräver åtkomstkod.';
 
+-- Ingen loggar in i det här projektet: bara anon behöver funktionerna.
+revoke execute on function public.hamta_statistik(text, int), public.aktivt_event(), public.skarm_lage(),
+  public.satt_skarm(text, text), public.lista_event(text), public.avsluta_event(text, bigint),
+  public.spara_event(text, text, text, timestamptz, timestamptz, jsonb, bigint)
+  from authenticated;
+
 
 -- ---------------------------------------------------------
---  Demodata ligger i databasen (60 dagar bakåt). Rensa allt
---  äldre än idag med:
+--  Nollställ allt (svar, event, skärmval) — koden behålls:
 --
---    delete from svar where tid < current_date;
+--    truncate svar, event restart identity;
+--    update installningar set skarm = 'standard' where id = 1;
 -- ---------------------------------------------------------

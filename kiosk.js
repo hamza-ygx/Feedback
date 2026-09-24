@@ -22,8 +22,8 @@
      ===================================================== */
 
   var DB = {
-    url:   "https://zersylbcdxfqgtmzvlaf.supabase.co",
-    nyckel:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InplcnN5bGJjZHhmcWd0bXp2bGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5OTYwNjUsImV4cCI6MjEwMjU3MjA2NX0.bURzmunUDxaHoq750S8BTb_Nz1_9Lxzg3Rtlwnd5KZ8",
+    url:   "https://yykoaoildtqyclpregug.supabase.co",
+    nyckel:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5a29hb2lsZHRxeWNscHJlZ3VnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyMjgxODksImV4cCI6MjEwNTgwNDE4OX0.eUIpJAsQ_QrMVCsPo6V__MfbEy3BbGa-DNYDBBA8Nj8",
     enhet: "entre"       // namn på den här skärmen
   };
 
