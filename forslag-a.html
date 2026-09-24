@@ -17,7 +17,9 @@
    byråns färg. Skalan behåller sina känslofärger — man ska
    inte behöva läsa för att svara.
 
-   Skriver inte till databasen: det här är ett designförslag.
+   Öppnad som vanligt är det ett designförslag som inte skriver
+   till databasen. Med ?skarp=1 (så öppnar plattan den när
+   skärmen är vald i översikten) är den skarp via kiosk.js.
    ========================================================= */
 
 *{box-sizing:border-box;}
@@ -170,6 +172,7 @@ h1{
   <p class="anonym">Svaren är anonyma</p>
 </div>
 
+<script src="kiosk.js"></script>
 <script>
 (function(){
   "use strict";
@@ -199,7 +202,7 @@ h1{
           '<circle cx="65" cy="40" r="5.2" fill="' + a.stark + '"/>' +
           '<path d="' + a.mun + '" fill="none" stroke="' + a.stark + '" stroke-width="5.5" stroke-linecap="round"/>' +
         '</svg><span>' + ORD[i] + '</span>';
-      b.onclick = svara;
+      b.onclick = function(){ svara(i + 1); };
       rad.appendChild(b);
     })(i);
   }
@@ -215,15 +218,18 @@ h1{
     }
   }
 
-  function svara(){
+  function svara(betyg){
     if (last) return;
     last = true;
+    Kiosk.svara(betyg);
     byt("tack");
     clearTimeout(timer);
     timer = setTimeout(function(){ byt("fraga"); last = false; }, TACK_MS);
   }
 
   document.oncontextmenu = function(e){ e.preventDefault(); };
+
+  if (/[?&]skarp=1/.test(location.search)) Kiosk.start({ skarm:"a" });
 })();
 </script>
 </body>

@@ -35,11 +35,29 @@ Ange sedan åtkomstkoden.
 Knappen **Visa med exempeldata** öppnar översikten utan databas — bra när
 man vill visa utseendet utan nät.
 
+## Styra skärmen från översikten
+
+Fliken **Skärm & event** i översikten (`/dashboard.html#styrning`):
+
+- **Skärmen i entrén** — välj Original, Förslag A, B eller C. Plattan
+  byter själv inom 15 sekunder. Förslagsfilerna är bara skarpa när
+  plattan öppnar dem (`?skarp=1`); öppnade direkt skriver de inget.
+- **Live-event** — starta ett event direkt eller schemalägg det, byt
+  mellan Betyg / Välkommen / Omröstning medan det pågår, förläng,
+  redigera agenda och alternativ, avsluta. Plattan följer inom 15 s
+  och går tillbaka till vald skärm när eventet är slut.
+- **Event** — kommande och tidigare event med resultat (betyg, röster).
+
+> **Kräver en databasuppdatering, en gång:** kör `migrering-styrning.sql`
+> i Supabase → SQL Editor. Tills dess visar fliken en påminnelse och
+> plattan fungerar som förut.
+
 ## Så hänger det ihop
 
 ```
 [ Platta i entrén ]        [ Supabase Postgres ]        [ Översikten ]
    index.html      ──────►    tabellen svar      ◄──────  dashboard.html
+   forslag-a/b/c   ◄──────    skarm_lage()       ◄──────  styr skärm + event
    ett tryck = en rad         RLS: insert-only            läser via funktion
    kö vid nätstrul            koden hashad (bcrypt)       som kräver åtkomstkod
 ```

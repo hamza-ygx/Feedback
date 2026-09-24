@@ -319,7 +319,7 @@ body{
   /* ===================================================== */
 
   var TACK_MS = 2600;
-  var KOLL_MS = 2 * 60 * 1000;   // hur ofta plattan frågar om eventläget
+  var KOLL_MS = 15 * 1000;       // hur ofta plattan frågar om eventläget
 
   /* Skarpt läge: plattan har själv bytt hit från vanliga skärmen.
      Då styr eventets typ vilken skärm som visas, svar skickas till
@@ -348,6 +348,13 @@ body{
 
   var event = EXEMPEL;
   var $ = function(id){ return document.getElementById(id); };
+
+  /* Eventtexten skrivs i översikten — behandla den som text, aldrig som HTML. */
+  function esc(t){
+    return String(t == null ? "" : t).replace(/[&<>"']/g, function(c){
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+    });
+  }
 
   /* -----------------------------------------------------
      Hämta aktivt event
@@ -432,12 +439,12 @@ body{
     agenda.forEach(function(p){
       var d = document.createElement("div");
       d.className = "punkt";
-      d.innerHTML = '<span class="tid">'+p.tid+'</span><span class="text">'+p.punkt+'</span>';
+      d.innerHTML = '<span class="tid">'+esc(p.tid)+'</span><span class="text">'+esc(p.punkt)+'</span>';
       mount.appendChild(d);
     });
     var fot = [];
-    if (x.plats) fot.push("<span><b>Plats</b> &nbsp;"+x.plats+"</span>");
-    if (x.wifi)  fot.push("<span><b>Wifi</b> &nbsp;"+x.wifi+"</span>");
+    if (x.plats) fot.push("<span><b>Plats</b> &nbsp;"+esc(x.plats)+"</span>");
+    if (x.wifi)  fot.push("<span><b>Wifi</b> &nbsp;"+esc(x.wifi)+"</span>");
     $("S2-fot").innerHTML = fot.join("");
     s2Uppdatera();
   }
@@ -456,7 +463,7 @@ body{
     var agenda = (event.extra && event.extra.agenda) || [];
     var aktIndex = -1;
     agenda.forEach(function(p, i){
-      var m = p.tid.split(":");
+      var m = String(p.tid || "").split(":");
       if (minuter >= (+m[0])*60 + (+m[1])) aktIndex = i;
     });
     for (var i = 0; i < punkter.length; i++){
@@ -543,11 +550,19 @@ body{
     $("scen").className = "scen hel";
   }
 
+  var senast = "";
+
   function koll(){
     hamtaEvent().then(function(e){
       if (e && e.id){
-        event = e;
-        fyllAllt();
+        /* Bygg bara om när översikten faktiskt ändrat något — annars
+           skulle knapparna ersättas mitt i ett tryck var 15:e sekund. */
+        var nytt = JSON.stringify(e);
+        if (nytt !== senast){
+          senast = nytt;
+          event = e;
+          fyllAllt();
+        }
         if (SKARP) visaSkarm(typTillSkarm(e.typ));
       } else if (SKARP){
         /* Eventet är slut — tillbaka till vanliga skärmen. */
