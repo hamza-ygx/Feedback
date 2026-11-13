@@ -1744,6 +1744,21 @@ var TYPNAMN = {}; TYPER.forEach(function(t){ TYPNAMN[t.k] = t.namn; });
 
 var styr = { lage:null, lista:[], saknas:false, redigerar:null, typ:"valkommen", upptagen:false };
 
+/* Event vars svar samlades in utanför plattan. De ligger här i
+   sidan, inte i databasen, och visas i eventlistan märkta Tillagt. */
+var STATISKA_EVENT = [
+  { id:"s-2026-11-12", namn:"Kundevent 12 november", typ:"betyg",
+    start_tid:"2026-11-12T14:45:00+01:00", slut_tid:"2026-11-12T20:17:00+01:00",
+    extra:{}, roster:{}, tillagt:true,
+    betyg_antal:42, betyg_snitt:4.74, betyg_fordelning:{ 5:33, 4:7, 3:2, 2:0, 1:0 } }
+];
+
+function medStatiska(lista){
+  return lista.concat(STATISKA_EVENT).sort(function(a, b){
+    return new Date(b.start_tid) - new Date(a.start_tid);
+  });
+}
+
 var kfmt = new Intl.DateTimeFormat("sv-SE",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
 
 function esc(t){
@@ -1878,7 +1893,7 @@ function visaVy(vy, anvandare){
 function laddaStyr(tyst){
   if (!state.kod && !state.demo) return Promise.resolve();
   return Promise.all([api.lage(), api.lista()]).then(function(r){
-    styr.lage = r[0]; styr.lista = r[1] || []; styr.saknas = false;
+    styr.lage = r[0]; styr.lista = medStatiska(r[1] || []); styr.saknas = false;
     ritaStyr();
   }).catch(function(fel){
     if (fel && fel.typ === "saknas"){ styr.saknas = true; ritaStyr(); return; }
@@ -2073,7 +2088,7 @@ function ritaLista(){
     rad.innerHTML =
       '<div class="huvud"><span class="badge ' + lage + '">' +
         (lage === "pagar" ? "Pågår" : lage === "kommande" ? "Kommande" : "Avslutat") +
-      '</span><b>' + esc(e.namn) + '</b></div>' +
+      '</span><b>' + esc(e.namn) + '</b>' + (e.tillagt ? '<span class="badge">Tillagt</span>' : '') + '</div>' +
       '<div class="meta">' + spann(e.start_tid, e.slut_tid) + " · " + (TYPNAMN[e.typ] || e.typ) + '</div>' +
       '<div class="res">' + resultat(e) + '</div>' +
       '<div class="knappar"></div>';
@@ -2105,6 +2120,18 @@ function resultat(e){
   if (e.betyg_antal){
     delar.push("<div>" + fmt.format(e.betyg_antal) + " betyg · snitt <b>" +
       (e.betyg_snitt != null ? fmt1.format(e.betyg_snitt) : "–") + "</b> av 5</div>");
+    if (e.betyg_fordelning){
+      var f = e.betyg_fordelning, fmax = 0;
+      for (var s = 1; s <= 5; s++) fmax = Math.max(fmax, f[s] || 0);
+      var fh = '<div class="rost">';
+      for (var v = 5; v >= 1; v--){
+        var fn = f[v] || 0;
+        fh += '<span class="namn">' + v + ' ★ · ' + NAMN[v-1] + '</span>' +
+          '<span class="spar"><i style="width:' + (fmax ? Math.round(100*fn/fmax) : 0) + '%"></i></span>' +
+          '<span class="n num">' + fn + '</span>';
+      }
+      delar.push(fh + "</div>");
+    }
   }
   var r = e.roster || {}, alt = (e.extra && e.extra.alternativ) || [];
   var tot = 0; for (var k in r) tot += r[k];
